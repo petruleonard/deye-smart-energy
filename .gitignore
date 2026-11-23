@@ -1,0 +1,16 @@
+# Build & temporary files
+build/*
+!build/deye_esp32_s3_bridge.bin
+!build/bootloader/
+!build/bootloader/bootloader.bin
+!build/partition_table/
+!build/partition_table/partition-table.bin
+!build/ota_data_initial.bin
+__pycache__/
+*.pyc
+*.flag
+sdkconfig
+sdkconfig.old
+simulate_solarman_logger.py
+managed_components/
+dependencies.lock

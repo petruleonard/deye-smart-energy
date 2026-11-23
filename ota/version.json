@@ -1,0 +1,5 @@
+{
+  "version": "v1.0.0",
+  "url": "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/build/deye_esp32_s3_bridge.bin",
+  "notes": "v1.0.0: mbedTLS mutat in PSRAM + suspendare scanare TCP in timpul apelurilor HTTPS Gemini."
+}

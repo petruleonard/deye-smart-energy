@@ -1,0 +1,3576 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070d19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Deye Smart Energy</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-app: #070d19;
+      --bg-card: rgba(15, 23, 42, 0.84);
+      --bg-card-solid: #0f172a;
+      --bg-elev: rgba(30, 41, 59, 0.65);
+      --border-soft: rgba(148, 163, 184, 0.18);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.14);
+      --indigo: #818cf8;
+      --indigo-soft: rgba(129, 140, 248, 0.14);
+      --emerald: #10b981;
+      --emerald-soft: rgba(16, 185, 129, 0.16);
+      --sky: #38bdf8;
+      --sky-soft: rgba(56, 189, 248, 0.15);
+      --red: #f87171;
+      --accent-color: #10b981;
+      --focus-ring: #38bdf8;
+      --scrollbar-track: #0b1120;
+      --scrollbar-thumb: #334155;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+      accent-color: var(--accent-color);
+    }
+
+    @supports not (scrollbar-color: auto) {
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--scrollbar-track);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 4px;
+      }
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 50% 0%, #101b33 0%, #070d19 60%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-block-size: 100dvh;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-block-end: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .app-shell {
+      inline-size: 100%;
+      max-inline-size: 430px;
+      padding: 8px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      min-inline-size: 0;
+    }
+
+    /* Header Status + 4 Hardware Chips */
+    .topbar {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px 2px 0;
+    }
+
+    .topbar-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 6px;
+      min-inline-size: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-inline-size: 0;
+    }
+
+    .brand-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-inline-size: 0;
+    }
+
+    .status-dot {
+      inline-size: 9px;
+      block-size: 9px;
+      border-radius: 50%;
+      background: #475569;
+      flex-shrink: 0;
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .status-dot.online {
+      background: #34d399;
+      box-shadow: 0 0 8px #34d399, 0 0 16px rgba(52, 211, 153, 0.75);
+    }
+
+    .brand-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-state {
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .brand-state.online {
+      color: #34d399;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .demo-tag {
+      display: none;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(249, 115, 22, 0.2);
+      border: 1px solid #f97316;
+      color: #fb923c;
+    }
+
+    .demo-tag.on {
+      display: inline-flex;
+    }
+
+    .wifi-bars {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      block-size: 13px;
+      cursor: default;
+    }
+
+    .wifi-bar {
+      inline-size: 2.8px;
+      border-radius: 1.5px;
+      background: #1e293b;
+      transition: background 0.25s ease;
+    }
+
+    .wifi-bar.on {
+      background: #e2e8f0;
+      box-shadow: 0 0 5px rgba(226, 232, 240, 0.4);
+    }
+
+    .wake-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 26px;
+      block-size: 26px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.2s ease;
+    }
+
+    .wake-btn.on {
+      color: #fbbf24;
+      filter: drop-shadow(0 0 7px rgba(251, 191, 36, 0.65));
+    }
+
+    .sys-chips {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .sys-chip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 5px 6px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(26, 36, 56, 0.85), rgba(15, 23, 42, 0.92));
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      min-inline-size: 0;
+    }
+
+    .sys-chip-lbl {
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 9.5px;
+    }
+
+    .sys-chip-val {
+      font-variant-numeric: tabular-nums;
+      color: #f8fafc;
+    }
+
+    .sys-chip-val.ok {
+      color: #f8fafc;
+    }
+
+    .sys-chip-val.warn {
+      color: #fbbf24;
+    }
+
+    .sys-chip-val.crit {
+      color: #f87171;
+    }
+
+    /* Views */
+    .view-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .view-pane[hidden] {
+      display: none;
+    }
+
+    /* 2x2 Backlit Frosted Glass Energy Hub + Wide Neon Flow Channels */
+    .flow-hub {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 42px;
+      row-gap: 42px;
+      padding: 4px 0;
+    }
+
+    .flow-svg {
+      position: absolute;
+      inset: 0;
+      inline-size: 100%;
+      block-size: 100%;
+      pointer-events: none;
+      z-index: 3;
+      display: block;
+      overflow: visible;
+    }
+
+    .energy-node {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 4px;
+      padding: 15px 8px 14px;
+      min-block-size: 142px;
+      border-radius: 22px;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      cursor: pointer;
+      color: inherit;
+      font-family: inherit;
+      transition: transform 0.16s ease, box-shadow 0.22s ease;
+      min-inline-size: 0;
+      overflow: hidden;
+    }
+
+    .energy-node::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse 80% 55% at 50% 8%, rgba(255, 255, 255, 0.13), transparent 70%);
+      pointer-events: none;
+    }
+
+    .energy-node:active {
+      transform: scale(0.98);
+    }
+
+    .energy-node.pv {
+      border: 1.4px solid rgba(251, 191, 36, 0.72);
+      background: radial-gradient(circle at 50% 24%, rgba(245, 158, 11, 0.36) 0%, rgba(168, 98, 14, 0.24) 48%, rgba(22, 19, 18, 0.80) 100%);
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.16), inset 0 1px 1px rgba(254, 240, 138, 0.42), inset 0 0 28px rgba(245, 158, 11, 0.22);
+    }
+
+    .energy-node.grid {
+      border: 1.4px solid rgba(129, 140, 248, 0.74);
+      background: radial-gradient(circle at 50% 24%, rgba(99, 102, 241, 0.38) 0%, rgba(56, 66, 158, 0.25) 48%, rgba(15, 20, 46, 0.82) 100%);
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.18), inset 0 1px 1px rgba(199, 210, 254, 0.40), inset 0 0 28px rgba(99, 102, 241, 0.24);
+    }
+
+    .energy-node.bat {
+      border: 1.4px solid rgba(52, 211, 153, 0.72);
+      background: radial-gradient(circle at 50% 24%, rgba(16, 185, 129, 0.36) 0%, rgba(11, 112, 84, 0.24) 48%, rgba(10, 29, 30, 0.82) 100%);
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.18), inset 0 1px 1px rgba(167, 243, 208, 0.40), inset 0 0 28px rgba(16, 185, 129, 0.24);
+    }
+
+    .energy-node.load {
+      border: 1.4px solid rgba(56, 189, 248, 0.74);
+      background: radial-gradient(circle at 50% 24%, rgba(56, 189, 248, 0.36) 0%, rgba(16, 106, 156, 0.25) 48%, rgba(11, 25, 46, 0.82) 100%);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.18), inset 0 1px 1px rgba(186, 230, 253, 0.40), inset 0 0 28px rgba(56, 189, 248, 0.24);
+    }
+
+    .node-ico {
+      inline-size: 40px;
+      block-size: 40px;
+      display: grid;
+      place-items: center;
+      margin-block-end: 2px;
+    }
+
+    .node-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.75px;
+      text-transform: uppercase;
+    }
+
+    .pv .node-label {
+      color: #fcd34d;
+    }
+
+    .grid .node-label {
+      color: #c7d2fe;
+    }
+
+    .bat .node-label {
+      color: #6ee7b7;
+    }
+
+    .load .node-label {
+      color: #bae6fd;
+    }
+
+    .node-val {
+      font-size: 21.5px;
+      font-weight: 900;
+      letter-spacing: -0.4px;
+      line-height: 1.08;
+      font-variant-numeric: tabular-nums;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    }
+
+    .node-sub {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(226, 232, 240, 0.76);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-inline-size: 100%;
+    }
+
+    .soc-ring-wrap {
+      position: relative;
+      inline-size: 48px;
+      block-size: 48px;
+      display: grid;
+      place-items: center;
+      margin-block-end: 1px;
+    }
+
+    .soc-ring-text {
+      position: absolute;
+      font-size: 12px;
+      font-weight: 900;
+      color: #a7f3d0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Central Double-Nested Rounded-Square Inverter Core overlapping inner card corners */
+    .inverter-core {
+      position: absolute;
+      inset-inline-start: 50%;
+      inset-block-start: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      inline-size: 98px;
+      block-size: 98px;
+      padding: 9px;
+      border-radius: 23px;
+      background: linear-gradient(155deg, rgba(38, 52, 78, 0.86) 0%, rgba(12, 18, 34, 0.94) 100%);
+      border: 1.3px solid rgba(148, 163, 184, 0.36);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.84), inset 0 1px 1px rgba(255, 255, 255, 0.22);
+      display: flex;
+      cursor: pointer;
+    }
+
+    .inverter-core-inner {
+      inline-size: 100%;
+      block-size: 100%;
+      border-radius: 15px;
+      background: linear-gradient(155deg, rgba(58, 72, 100, 0.72) 0%, rgba(18, 26, 44, 0.96) 100%);
+      border: 1.2px solid rgba(203, 213, 225, 0.30);
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.22), 0 4px 12px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      text-align: center;
+    }
+
+    .inverter-core-name {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: 0.9px;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .inverter-core-meta {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    /* Glass Cards */
+    .glass-card {
+      background: linear-gradient(180deg, rgba(19, 29, 50, 0.84), rgba(11, 18, 34, 0.90));
+      border: 1px solid rgba(148, 163, 184, 0.20);
+      border-radius: 20px;
+      padding: 13px 14px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      min-inline-size: 0;
+    }
+
+    .autonomy-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-block-end: 8px;
+      border-block-end: 1px solid rgba(148, 163, 184, 0.12);
+      flex-wrap: wrap;
+    }
+
+    .autonomy-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .autonomy-title strong {
+      color: #ffffff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .indep-badge {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(52, 211, 153, 0.55);
+      color: #6ee7b7;
+      font-size: 10.5px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .chart-box {
+      position: relative;
+      inline-size: 100%;
+      aspect-ratio: 16 / 7.8;
+      min-block-size: 138px;
+    }
+
+    .chart-box.tall {
+      aspect-ratio: 16 / 10;
+      min-block-size: 190px;
+    }
+
+    .chart-canvas {
+      display: block;
+      inline-size: 100%;
+      block-size: 100%;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      margin-block-start: -3px;
+    }
+
+    .lg-dot {
+      display: inline-block;
+      inline-size: 7px;
+      block-size: 7px;
+      border-radius: 50%;
+      margin-inline-end: 4px;
+    }
+
+    /* Quick Thumb Capsule Pills matching Mockup */
+    .quick-dock {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .quick-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 9px 8px 14px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(20, 30, 50, 0.90), rgba(11, 18, 34, 0.96));
+      border: 1.3px solid rgba(148, 163, 184, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      min-inline-size: 0;
+    }
+
+    .quick-pill.eco-on {
+      border-color: rgba(110, 231, 183, 0.85);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(6, 78, 59, 0.56));
+      box-shadow: 0 0 24px rgba(52, 211, 153, 0.40), inset 0 0 14px rgba(52, 211, 153, 0.22);
+    }
+
+    .pill-tag {
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      color: #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .quick-pill.eco-on .pill-tag {
+      background: linear-gradient(135deg, #a7f3d0, #34d399);
+      border-color: #d1fae5;
+      color: #022c22;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.65);
+    }
+
+    /* Section Headers & Lists */
+    .view-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .view-hdr h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      background: rgba(30, 41, 59, 0.7);
+      color: var(--sky);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat-tile {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(11, 18, 34, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      min-inline-size: 0;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stat-val {
+      margin-block-start: 3px;
+      font-size: 16px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: #f8fafc;
+    }
+
+    /* Native Accessible Switch Controls (modern-web-guidance: switch) */
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      cursor: pointer;
+    }
+
+    .switch-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-inline-size: 0;
+    }
+
+    .switch-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .switch-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    input[type="checkbox"][switch] {
+      appearance: none;
+      -webkit-appearance: none;
+      position: relative;
+      inline-size: 46px;
+      block-size: 26px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      margin: 0;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    input[type="checkbox"][switch]::before {
+      content: "";
+      position: absolute;
+      inset-inline-start: 3px;
+      inset-block-start: 50%;
+      transform: translateY(-50%);
+      inline-size: 18px;
+      block-size: 18px;
+      border-radius: 50%;
+      background: #94a3b8;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    input[type="checkbox"][switch]:checked {
+      background: rgba(16, 185, 129, 0.28);
+      border-color: var(--emerald);
+    }
+
+    input[type="checkbox"][switch]:checked::before {
+      transform: translate(20px, -50%);
+      background: #34d399;
+    }
+
+    input[type="checkbox"][switch]:focus-visible,
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    /* Schedule Bar */
+    .sched-bar {
+      position: relative;
+      block-size: 26px;
+      border-radius: 8px;
+      background: #064e3b;
+      border: 1px solid #10b981;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #d1fae5;
+    }
+
+    .sched-seg {
+      position: absolute;
+      inset-block: 0;
+      background: rgba(245, 158, 11, 0.88);
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    /* Forms & Inputs */
+    .field-grp {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field-lbl {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .field-inp {
+      inline-size: 100%;
+      padding: 10px 11px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #091020;
+      color: #f8fafc;
+      font-size: 13.5px;
+      font-family: inherit;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .btn-primary {
+      inline-size: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #022c22;
+      font-size: 13.5px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      inline-size: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #0284c7;
+      background: rgba(14, 116, 144, 0.2);
+      color: #38bdf8;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-secondary.warn {
+      border-color: #d97706;
+      background: rgba(217, 119, 6, 0.16);
+      color: #fbbf24;
+    }
+
+    .seg-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .seg-btn {
+      padding: 8px 6px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0b1222;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .seg-btn[aria-pressed="true"] {
+      border-color: var(--sky);
+      background: rgba(56, 189, 248, 0.16);
+      color: #e0f2fe;
+    }
+
+    /* Bottom Fixed Navigation (nav + aria-current="page" + non-color indicator bar) */
+    .bottom-nav {
+      position: fixed;
+      inset-inline: 0;
+      inset-block-end: 0;
+      z-index: 30;
+      display: flex;
+      justify-content: center;
+      background: rgba(8, 14, 26, 0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-block-start: 1px solid rgba(148, 163, 184, 0.16);
+      padding-block-end: env(safe-area-inset-bottom, 0px);
+    }
+
+    .bottom-nav-inner {
+      inline-size: 100%;
+      max-inline-size: 460px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    /* AI Assistant Full-Height Mobile View */
+    .ai-card-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      block-size: calc(100dvh - 196px);
+      min-block-size: 440px;
+    }
+
+    .ai-quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      flex-shrink: 0;
+    }
+
+    .ai-chip-btn {
+      padding: 9px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      background: rgba(15, 29, 48, 0.85);
+      color: #f1f5f9;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .ai-chip-btn:active {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: #34d399;
+    }
+
+    .ai-audit-tg-btn {
+      inline-size: 100%;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid #0284c7;
+      background: rgba(14, 116, 144, 0.18);
+      color: #38bdf8;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .ai-chat-box {
+      flex: 1;
+      min-block-size: 0;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 8px 4px;
+      border-block: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .ai-msg-user {
+      align-self: flex-end;
+      max-inline-size: 84%;
+      padding: 10px 13px;
+      border-radius: 14px 14px 4px 14px;
+      background: rgba(14, 116, 144, 0.38);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #f8fafc;
+      font-size: 14.5px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .ai-msg-bot-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      max-inline-size: 96%;
+    }
+
+    .ai-bot-avatar {
+      inline-size: 32px;
+      block-size: 32px;
+      border-radius: 10px;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      background: rgba(15, 23, 42, 0.9);
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .ai-msg-bot {
+      flex: 1;
+      padding: 11px 13px;
+      border-radius: 4px 14px 14px 14px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      color: #f1f5f9;
+      font-size: 14.5px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .ai-msg-bot.err {
+      border-color: rgba(248, 113, 113, 0.55);
+      color: #fecaca;
+    }
+
+    .ai-retry-btn {
+      margin-block-start: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #f59e0b;
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .ai-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      padding: 4px 6px 4px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      background: #080f1e;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .ai-input-row:focus-within {
+      border-color: rgba(52, 211, 153, 0.55);
+      box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.14);
+    }
+
+    .ai-prompt-inp {
+      flex: 1;
+      min-inline-size: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: #f8fafc;
+      font-size: 15px;
+      padding-block: 7px;
+    }
+
+    .ai-prompt-inp:focus,
+    .ai-prompt-inp:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+
+    .ai-send-btn {
+      inline-size: 40px;
+      block-size: 36px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #10b981, #34d399);
+      color: #022c22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+      transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+    }
+
+    .ai-send-btn.stop {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
+    }
+
+    .ai-send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .nav-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 9px 4px 8px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: color 0.18s ease;
+    }
+
+    .nav-btn[aria-current="page"] {
+      color: #34d399;
+    }
+
+    .nav-btn[aria-current="page"]::before {
+      content: "";
+      position: absolute;
+      inset-block-start: 0;
+      inset-inline: 24%;
+      border-block-start: 2.5px solid #34d399;
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* Native Modal <dialog> (modern-web-guidance: dialog) */
+    dialog.native-dialog {
+      margin: auto;
+      inline-size: min(92vw, 350px);
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px solid var(--border-soft);
+      background: #0f172a;
+      color: var(--text-main);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.65);
+    }
+
+    dialog.native-dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog.native-dialog::backdrop {
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+
+    dialog.native-dialog[open] {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-note {
+      font-size: 12px;
+      font-weight: 700;
+      min-block-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .scan-box {
+      display: none;
+      background: #091020;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    .scan-box.open {
+      display: block;
+    }
+
+    .scan-item {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(15, 23, 42, 0.85);
+      margin-block-start: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar-row">
+        <div class="header-left">
+          <span class="demo-tag" id="demoTag">DEMO</span>
+        </div>
+        <div class="brand-status">
+          <span class="status-dot" id="brandDot" aria-hidden="true"></span>
+          <span class="brand-title">Deye Hybrid &bull; <span class="brand-state" id="brandState">Offline</span></span>
+        </div>
+        <div class="header-actions">
+          <div class="wifi-bars" id="wifiBars" title="Semnal Wi-Fi: indisponibil">
+            <span class="wifi-bar" style="height:4px"></span>
+            <span class="wifi-bar" style="height:6.5px"></span>
+            <span class="wifi-bar" style="height:9px"></span>
+            <span class="wifi-bar" style="height:11.5px"></span>
+            <span class="wifi-bar" style="height:14px"></span>
+          </div>
+          <button type="button" class="wake-btn on" id="wakeLockBtn" onclick="toggleKeepScreen()" aria-pressed="true"
+            title="Mentine ecranul aprins cat timp urmaresti parametrii"></button>
+        </div>
+      </div>
+      <div class="sys-chips" id="sysChips">
+        <div class="sys-chip" id="cpuChip" title="Procesor ESP32-S3: --%">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="6" y="6" width="12" height="12" rx="2" />
+            <rect x="9" y="9" width="6" height="6" rx="1" />
+            <path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4" />
+          </svg>
+          <span class="sys-chip-val" id="cpuPctVal">--%</span>
+        </div>
+        <div class="sys-chip" id="ramChip" title="RAM ESP32-S3: --%">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="6" width="18" height="10" rx="2" />
+            <path d="M7 16v3M12 16v3M17 16v3M7 9v4M11 9v4M15 9v4" />
+          </svg>
+          <span class="sys-chip-val" id="ramPctVal">--%</span>
+        </div>
+        <div class="sys-chip" id="stoChip" title="Slot OTA activ: --%">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <ellipse cx="12" cy="5" rx="8" ry="3" />
+            <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
+            <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+          </svg>
+          <span class="sys-chip-val" id="stoPctVal">--%</span>
+        </div>
+        <div class="sys-chip" id="tempChip" title="Temperatura cip ESP32-S3: --">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"
+            aria-hidden="true">
+            <path d="M14 14.76V3.5a2 2 0 0 0-4 0v11.26a4.5 4.5 0 1 0 4 0z" />
+          </svg>
+          <span class="sys-chip-val" id="espTempVal">--&deg;C</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- VIEW 1: LIVE -->
+    <main class="view-pane" id="view-live">
+      <section class="flow-hub" id="flowHub" aria-label="Flux energetic instantaneu">
+        <svg class="flow-svg" id="flowSvg" aria-hidden="true">
+          <defs>
+            <filter id="neonHalo" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="5.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="flowBeams"></g>
+        </svg>
+
+        <!-- Solar PV -->
+        <button type="button" class="energy-node pv" id="nodePv" onclick="openView('view-solar')">
+          <div class="node-ico" aria-hidden="true">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+              <circle cx="7.2" cy="6.2" r="2.7" fill="#fbbf24" />
+              <path
+                d="M7.2 1.5V3M7.2 9.8V11M2.4 6.2H3.8M10.8 6.2H12M3.9 2.9l.9.9M9.7 8.7l.9.9M3.9 9.5l.9-.9M9.7 3.7l.9-.9"
+                stroke="#fcd34d" stroke-width="1.35" stroke-linecap="round" />
+              <path d="M5.5 11.8h14.8l-2.3 8.6H3.2l2.3-8.6z" fill="#f59e0b" stroke="#fde68a" stroke-width="0.9"
+                stroke-linejoin="round" />
+              <path d="M10.4 11.8L8.4 20.4M15.2 11.8l-2 8.6M4.3 15.9h14.8" stroke="#451a03" stroke-width="1.3" />
+            </svg>
+          </div>
+          <span class="node-label">SOLAR PV</span>
+          <span class="node-val" id="livePvVal">0.00 kW</span>
+          <span class="node-sub" id="livePvSub">Azi: 0.0 kWh</span>
+        </button>
+
+        <!-- Retea -->
+        <button type="button" class="energy-node grid" id="nodeGrid" onclick="openView('view-grid')">
+          <div class="node-ico" aria-hidden="true">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.2L7.4 21.2M12 2.2L16.6 21.2" />
+              <path d="M4.5 7.8h15M6 12.6h12M7.8 17.5h8.4" />
+              <path
+                d="M4.5 7.8L12 4.2l7.5 3.6M8.8 12.6l6.8 4.9M15.2 12.6l-6.8 4.9M7.8 17.5l8.2 3.7M16.2 17.5l-8.2 3.7" />
+            </svg>
+          </div>
+          <span class="node-label">RE&#x21A;EA</span>
+          <span class="node-val" id="liveGridVal">0 W</span>
+          <span class="node-sub" id="liveGridSub">230V &bull; 50.0Hz</span>
+        </button>
+
+        <!-- Central Double Nested Rounded-Square Core (clickable -> Detalii Invertor) -->
+        <button type="button" class="inverter-core" id="inverterCore" onclick="openView('view-inverter')" style="cursor:pointer;font-family:inherit;color:inherit;" aria-label="Detalii Invertor Deye">
+          <div class="inverter-core-inner">
+            <div class="inverter-core-name">DEYE</div>
+            <div class="inverter-core-meta" id="coreMeta">1F &bull; --&#xB0;C</div>
+          </div>
+        </button>
+
+        <!-- Baterie -->
+        <button type="button" class="energy-node bat" id="nodeBat" onclick="openView('view-battery')">
+          <div class="soc-ring-wrap">
+            <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="19" fill="none" stroke="rgba(52,211,153,0.20)" stroke-width="5" />
+              <circle id="socRingArc" cx="24" cy="24" r="19" fill="none" stroke="#34d399" stroke-width="5"
+                stroke-linecap="round" stroke-dasharray="119.4" stroke-dashoffset="119.4"
+                transform="rotate(-90 24 24)" />
+            </svg>
+            <span class="soc-ring-text" id="liveSocTxt">--%</span>
+          </div>
+          <span class="node-label">BATERIE</span>
+          <span class="node-val" id="liveBatVal">0 W</span>
+          <span class="node-sub" id="liveBatSub">Standby &bull; --V</span>
+        </button>
+
+        <!-- Consum Casa -->
+        <button type="button" class="energy-node load" id="nodeLoad" onclick="openView('view-load')">
+          <div class="node-ico" aria-hidden="true">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M2.5 11.4L12 3.4l9.5 8v1.1h-2.1V20a1 1 0 0 1-1 1h-4.1v-5.5h-4.6V21H5.6a1 1 0 0 1-1-1v-7.5H2.5v-1.1z"
+                fill="#38bdf8" stroke="#bae6fd" stroke-width="0.8" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <span class="node-label">CONSUM CAS&#x102;</span>
+          <span class="node-val" id="liveLoadVal">0 W</span>
+          <span class="node-sub" id="liveLoadSub">Azi: 0.0 kWh</span>
+        </button>
+      </section>
+
+      <!-- Autonomy + Intraday Chart -->
+      <section class="glass-card" aria-label="Autonomie și profil zilnic">
+        <div class="autonomy-head">
+          <div class="autonomy-title">Autonomie estimat&#x103;: <strong id="autonomyVal">--</strong></div>
+          <span class="indep-badge" id="indepBadge">--% Independent</span>
+        </div>
+        <div class="chart-box">
+          <canvas class="chart-canvas" id="miniChart"></canvas>
+        </div>
+        <div class="chart-legend">
+          <span><span class="lg-dot" style="background:#f59e0b"></span>Solar PV</span>
+          <span><span class="lg-dot" style="background:#38bdf8"></span>Consum</span>
+          <span><span class="lg-dot" style="background:#34d399"></span>Baterie SoC%</span>
+        </div>
+      </section>
+
+      <!-- 2 Quick Thumb Pills -->
+      <div class="quick-dock">
+        <button type="button" class="quick-pill" id="quickEcoBtn" role="switch" aria-checked="false"
+          onclick="toggleQuickEco()">
+          <span>Mod Eco</span>
+          <span class="pill-tag" id="quickEcoTag">NORMAL</span>
+        </button>
+        <button type="button" class="quick-pill" id="quickChgBtn" onclick="openView('view-battery')">
+          <span>&#xCE;nc&#x103;rcare</span>
+          <span class="pill-tag" id="quickChgTag">-- A</span>
+        </button>
+      </div>
+    </main>
+
+    <!-- VIEW 2: ISTORIC -->
+    <section class="view-pane" id="view-history" hidden>
+      <div class="view-hdr">
+        <h2>Istoric &amp; Randament</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; Live</button>
+      </div>
+      <div class="glass-card">
+        <div class="seg-bar" role="group" aria-label="Perioada istoric">
+          <button type="button" class="seg-btn" id="pBtn-day" aria-pressed="true"
+            onclick="setHistPeriod('day')">Zi</button>
+          <button type="button" class="seg-btn" id="pBtn-month" aria-pressed="false"
+            onclick="setHistPeriod('month')">Lun&#x103;</button>
+          <button type="button" class="seg-btn" id="pBtn-year" aria-pressed="false"
+            onclick="setHistPeriod('year')">An</button>
+          <button type="button" class="seg-btn" id="pBtn-total" aria-pressed="false"
+            onclick="setHistPeriod('total')">Total</button>
+        </div>
+        <div style="display:flex; align-items:center; width:100%;">
+          <input class="field-inp" id="histDateInp" type="date" aria-label="Selecteaza ziua" onchange="loadHistoryData()" style="width:100%;">
+          <div id="histMonthWrap" style="display:none; gap:6px; align-items:center; width:100%;">
+            <select class="field-inp" id="histMonthSel" aria-label="Selecteaza luna" onchange="loadHistoryData()" style="flex:1;min-width:0;"></select>
+            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent" style="padding:8px 12px;">&#8249;</button>
+            <span id="histMonthYrVal" style="font-size:13px;font-weight:800;min-width:42px;text-align:center;">2026</span>
+            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator" style="padding:8px 12px;">&#8250;</button>
+          </div>
+          <div id="histYearWrap" style="display:none; gap:6px; align-items:center; width:100%;">
+            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent" style="padding:8px 14px;">&#8249;</button>
+            <input class="field-inp" id="histYearInp" type="number" min="2000" max="2099" aria-label="Selecteaza anul" onchange="syncHistYearFromInp()" style="flex:1;text-align:center;font-weight:800;">
+            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator" style="padding:8px 14px;">&#8250;</button>
+          </div>
+          <span class="switch-desc" id="histTotalLbl" style="display:none;">Cumulat din tot istoricul salvat</span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Solar Produs</div>
+            <div class="stat-val" id="hPv">-- kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Consum Cas&#x103;</div>
+            <div class="stat-val" id="hLoad">-- kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Import Re&#x21B;ea</div>
+            <div class="stat-val" id="hBuy">-- kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Export Re&#x21B;ea</div>
+            <div class="stat-val" id="hSell">-- kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Baterie &#xCE;nc&#x103;rcat</div>
+            <div class="stat-val" id="hChg">-- kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Baterie Desc&#x103;rcat</div>
+            <div class="stat-val" id="hDis">-- kWh</div>
+          </div>
+        </div>
+        <button type="button" class="btn-secondary warn" style="margin-top:10px;" onclick="clearSpiffsHistory()">&#x1F5D1; &#x218;terge Istoric
+          SPIFFS</button>
+      </div>
+    </section>
+
+    <!-- VIEW 3: BATERIE -->
+    <section class="view-pane" id="view-battery" hidden>
+      <div class="view-hdr">
+        <h2>Baterie &amp; Protec&#x21B;ii</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; Live</button>
+      </div>
+      <div class="glass-card">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Stare &#xCE;nc&#x103;rcare (SoC)</div>
+            <div class="stat-val" id="bSoc">--%</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">S&#x103;n&#x103;tate (SOH)</div>
+            <div class="stat-val" id="bSoh">--%</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Tensiune / Curent</div>
+            <div class="stat-val" id="bVI">-- V / -- A</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Temperatur&#x103; BMS</div>
+            <div class="stat-val" id="bTemp">-- &#xB0;C</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Limit&#x103; Max &#xCE;nc&#x103;rcare</div>
+            <div class="stat-val" id="bMaxA">-- A</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Curent Normal Salvat</div>
+            <div class="stat-val" id="bNormA">-- A</div>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="field-grp">
+            <label class="field-lbl" for="cfgBatKwh">Capacitate pachet (kWh)</label>
+            <input class="field-inp" type="text" inputmode="decimal" id="cfgBatKwh" value="10.2"
+              onchange="saveLocalBatCap()">
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="cfgBatMinSoc">Rezerv&#x103; autonomie (%)</label>
+            <input class="field-inp" type="number" id="cfgBatMinSoc" min="5" max="50" step="1" value="20"
+              onchange="saveLocalBatCap()">
+          </div>
+        </div>
+        <div class="switch-desc" style="margin-top:6px;">Valori folosite doar pentru calculul autonomiei (nu modific&#x103; invertorul).</div>
+      </div>
+
+      <div class="glass-card">
+        <label class="switch-row">
+          <div class="switch-info">
+            <span class="switch-title">&#x2600;&#xFE0F; Pauz&#x103; &#xCE;nc&#x103;rcare Ziua (Mod Var&#x103; 0A)</span>
+            <span class="switch-desc">Pune curentul de &#xEE;nc&#x103;rcare la 0A &#xEE;ntre orele selectate</span>
+          </div>
+          <input type="checkbox" switch id="batSchedSwitch" onchange="saveBatteryCfg()">
+        </label>
+        <div class="sched-bar" id="schedBar">
+          <span>&#xCE;nc&#x103;rcare normal&#x103; 24h</span>
+          <div class="sched-seg" id="schedSeg" style="display:none;">0A</div>
+        </div>
+        <div class="row-2">
+          <div class="field-grp">
+            <label class="field-lbl" for="batStartInp">Start Pauz&#x103; 0A</label>
+            <input class="field-inp" type="time" id="batStartInp" value="06:00">
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="batEndInp">Stop Pauz&#x103; (Reia)</label>
+            <input class="field-inp" type="time" id="batEndInp" value="11:00">
+          </div>
+        </div>
+        <button type="button" class="btn-secondary" onclick="saveBatteryCfg()">Aplic&#x103; Programul Orar</button>
+      </div>
+
+      <div class="glass-card">
+        <div class="autonomy-title">Alerte Inteligente Telegram</div>
+        <label class="switch-row">
+          <div class="switch-info">
+            <span class="switch-title">Alert&#x103; Lips&#x103; Comunica&#x21B;ie BMS</span>
+            <span class="switch-desc">Notific&#x103; dac&#x103; invertorul pierde leg&#x103;tura cu BMS-ul</span>
+          </div>
+          <input type="checkbox" switch id="tgBmsSwitch" onchange="saveBatteryCfg()">
+        </label>
+        <label class="switch-row">
+          <div class="switch-info">
+            <span class="switch-title">Alert&#x103; Temperatur&#x103; Sc&#x103;zut&#x103; Baterie</span>
+            <span class="switch-desc">Previne &#xEE;nc&#x103;rcarea sub pragul de siguran&#x21B;&#x103;</span>
+          </div>
+          <input type="checkbox" switch id="tgFreezeSwitch" onchange="saveBatteryCfg()">
+        </label>
+        <div class="row-2" style="align-items:end;">
+          <div class="field-grp">
+            <label class="field-lbl" for="batFreezeInp">Prag temperatur&#x103; (&#xB0;C)</label>
+            <input class="field-inp" type="number" id="batFreezeInp" min="-5" max="20" value="8">
+          </div>
+          <button type="button" class="btn-secondary" onclick="saveBatteryCfg()">Salveaz&#x103; Prag</button>
+        </div>
+        <div class="status-note" id="batCfgNote"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: SETARI -->
+    <section class="view-pane" id="view-settings" hidden>
+      <div class="view-hdr">
+        <h2>Set&#x103;ri Sistem &amp; OTA</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; Live</button>
+      </div>
+
+      <div class="glass-card">
+        <div class="row-2">
+          <button type="button" class="btn-secondary" onclick="rebootEsp32()">&#x1F504; Restart ESP32</button>
+          <button type="button" class="btn-secondary warn" id="btnToggleDemo" onclick="toggleDemoMode()">Mod Demo:
+            OFF</button>
+        </div>
+        <div id="settingsBody" style="display:flex; flex-direction:column; gap:10px;">
+          <button type="button" class="btn-secondary" id="btnScanLan" onclick="scanInverters()">&#x1F50D; Scaneaz&#x103;
+            Invertor Solarman (LAN)</button>
+          <div class="status-note" id="selectedLoggerTxt">Se &#xEE;ncarc&#x103; set&#x103;rile din NVS...</div>
+          <div class="scan-box" id="scanBox"></div>
+          <input type="hidden" id="cfg-mac">
+          <details style="background:rgba(15,23,42,0.55);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:8px 10px;">
+            <summary style="cursor:pointer;font-size:12px;color:#94a3b8;font-weight:600;">&#9881;&#65039; Configurare manual&#x103; logger (op&#x21B;ional, cazuri extreme)</summary>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+              <div class="field-grp">
+                <label class="field-lbl" for="cfg-ip">IP Logger Solarman</label>
+                <input class="field-inp" type="text" id="cfg-ip" placeholder="ex: 192.168.68.101">
+              </div>
+              <div class="field-grp">
+                <label class="field-lbl" for="cfg-sn">Serial Number (SN) Logger</label>
+                <input class="field-inp" type="number" id="cfg-sn" placeholder="ex: 3116957403">
+              </div>
+            </div>
+          </details>
+
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-interval">Interval Citire Invertor (secunde, 5–60s)</label>
+            <input class="field-inp" type="number" id="cfg-interval" min="5" max="60" value="5">
+          </div>
+
+          <div class="field-grp">
+            <span class="field-lbl">Mod Alimentare ESP32-S3 (Wi-Fi &amp; CPU)</span>
+            <div class="row-2">
+              <button type="button" class="seg-btn" id="btnModeNorm" aria-pressed="true"
+                onclick="chooseEcoSetting(false)">&#x26A1; Normal (240MHz)</button>
+              <button type="button" class="seg-btn" id="btnModeEco" aria-pressed="false"
+                onclick="chooseEcoSetting(true)">&#x1F33F; Mod Eco (160MHz)</button>
+            </div>
+            <span class="switch-desc" id="ecoDesc">Normal: putere maxim&#x103; 20 dBm &#x219;i CPU 240 MHz
+              f&#x103;r&#x103; Modem Sleep.</span>
+          </div>
+
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-tg-tok">Telegram Bot Token</label>
+            <input class="field-inp" type="text" id="cfg-tg-tok" placeholder="123456:ABC...">
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-tg-chat">Telegram Chat ID</label>
+            <input class="field-inp" type="text" id="cfg-tg-chat" placeholder="987654321">
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-gemini-key">Cheie API Gemini (Google AI Studio &mdash; mascat&#x103;)</label>
+            <input class="field-inp" type="password" id="cfg-gemini-key" placeholder="AIza... (lasa gol pentru a pastra cheia existenta)" autocomplete="off">
+            <div id="gemini-key-hint" style="font-size:11px; color:#94a3b8; margin-top:2px;"></div>
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-gemini-model-sel">Model Gemini (cu fallback automat)</label>
+            <select class="field-inp" id="cfg-gemini-model-sel" onchange="onGeminiModelSelChange()">
+              <option value="gemini-flash-lite-latest">Gemini Flash-Lite Latest (implicit, auto-actualizat)</option>
+              <option value="gemini-3.8-flash">Gemini 3.8 Flash (performant)</option>
+              <option value="gemini-4-hydrogen">Gemini 4 Hydrogen (top Free Tier)</option>
+              <option value="__custom__">Alt model (introdu manual)...</option>
+            </select>
+            <input class="field-inp" type="text" id="cfg-gemini-model" style="display:none;margin-top:6px;" placeholder="ex: gemini-3-flash-preview">
+            <span class="switch-desc">Dac&#x103; un model este &#xEE;nlocuit de Google, ESP32 trece automat pe noul model activ.</span>
+          </div>
+          <div class="field-grp">
+            <label class="field-lbl" for="cfg-w-city">Localitate Meteo (Open-Meteo)</label>
+            <div style="display:flex;gap:6px;">
+              <input class="field-inp" type="text" id="cfg-w-city" placeholder="ex: Braila" style="flex:1;">
+              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;" onclick="searchWeatherCity()">Caut&#x103;</button>
+              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;" onclick="detectWeatherLocation()" title="Detecteaz&#x103; automat">&#x1F4CD; Auto</button>
+            </div>
+            <input type="hidden" id="cfg-w-lat" value="0">
+            <input type="hidden" id="cfg-w-lon" value="0">
+            <div id="weather-loc-hint" style="font-size:11px;color:#94a3b8;margin-top:3px;">Nicio localitate configurat&#x103;.</div>
+          </div>
+          <div class="row-2">
+            <button type="button" class="btn-primary" onclick="saveSettings()">Salveaz&#x103;</button>
+            <button type="button" class="btn-secondary" onclick="testTelegram()">Test Telegram</button>
+          </div>
+          <div class="status-note" id="cfgNote"></div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="autonomy-head">
+          <span class="autonomy-title">Firmware &amp; Actualizare OTA</span>
+          <span class="indep-badge" id="fwBadge">v1.0.0</span>
+        </div>
+        <div class="field-grp">
+          <label class="field-lbl" for="otaFileInp">&#xCE;ncarc&#x103; fi&#x219;ier local (.bin)</label>
+          <input class="field-inp" type="file" id="otaFileInp" accept=".bin">
+        </div>
+        <div class="row-2">
+          <button type="button" class="btn-secondary warn" onclick="uploadLocalOta()">Instaleaz&#x103; .bin</button>
+          <button type="button" class="btn-secondary" onclick="checkGithubOta()">Verific&#x103; GitHub</button>
+        </div>
+        <button type="button" class="btn-primary" id="btnGhInstall" style="display:none;"
+          onclick="startGithubOta()">Instaleaz&#x103; Actualizarea GitHub</button>
+        <div id="otaProgWrap" style="display:none;background:#091020;border:1px solid #334155;border-radius:999px;height:12px;overflow:hidden;">
+          <div id="otaProgBar" style="width:0%;height:100%;background:linear-gradient(90deg,#0ea5e9,#34d399);transition:width 0.3s ease;"></div>
+        </div>
+        <div class="status-note" id="otaNote"></div>
+        <a href="/setup" class="btn-secondary" style="text-align:center; text-decoration:none; display:block;">&#x1F4F6;
+          Configurare Wi-Fi (Portal Captiv /setup)</a>
+      </div>
+    </section>
+
+    <!-- Sub-view: SOLAR PV DETAILS -->
+    <section class="view-pane" id="view-solar" hidden>
+      <div class="view-hdr">
+        <h2>Detalii Panouri Solare</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; &#xCE;napoi</button>
+      </div>
+      <div class="glass-card">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Putere Total&#x103; PV</div>
+            <div class="stat-val" id="dPvTotal">0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Produc&#x21B;ie Azi / Total</div>
+            <div class="stat-val" id="dPvKwh">0 / 0 kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">String MPPT 1</div>
+            <div class="stat-val" id="dPv1">0 W &bull; 0 V</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">String MPPT 2</div>
+            <div class="stat-val" id="dPv2">0 W &bull; 0 V</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">String MPPT 3</div>
+            <div class="stat-val" id="dPv3">0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">String MPPT 4</div>
+            <div class="stat-val" id="dPv4">0 W</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sub-view: INVERTER DETAILS -->
+    <section class="view-pane" id="view-inverter" hidden>
+      <div class="view-hdr">
+        <h2>Detalii Invertor Deye</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; &#xCE;napoi</button>
+      </div>
+      <div class="glass-card">
+        <div class="autonomy-title">Stare &amp; Func&#x21B;ionare Invertor</div>
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Stare Invertor</div>
+            <div class="stat-val" id="dInvStatus">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Temperatur&#x103; Invertor</div>
+            <div class="stat-val" id="dInvTemp">-- &#xB0;C</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Tip &amp; Faze</div>
+            <div class="stat-val" id="dInvType">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Putere Solar&#x103; Intrare</div>
+            <div class="stat-val" id="dInvPv">0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Putere Nominal&#x103; Invertor</div>
+            <div class="stat-val" id="dInvRated">-- kW</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Serie Invertor (SN)</div>
+            <div class="stat-val" id="dInvSn">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Serie Logger (SN)</div>
+            <div class="stat-val" id="dLogSn">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">MAC Logger</div>
+            <div class="stat-val" id="dLogMac">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Factor Putere / Frecven&#x21B;&#x103;</div>
+            <div class="stat-val" id="dInvPfHz">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Comunica&#x21B;ie Logger</div>
+            <div class="stat-val" id="dInvStateStr">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card">
+        <div class="autonomy-title">Modul ESP32-S3 Bridge</div>
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Procesor ESP32-S3</div>
+            <div class="stat-val" id="dEspCpu">--%</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">RAM / Slot OTA</div>
+            <div class="stat-val" id="dEspMem">-- / --</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Temperatur&#x103; Cip</div>
+            <div class="stat-val" id="dEspTemp">-- &#xB0;C</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Wi-Fi &amp; Mod</div>
+            <div class="stat-val" id="dEspWifi">--</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sub-view: GRID DETAILS -->
+    <section class="view-pane" id="view-grid" hidden>
+      <div class="view-hdr">
+        <h2>Detalii Re&#x21B;ea &amp; Faze</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; &#xCE;napoi</button>
+      </div>
+      <div class="glass-card">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Putere Re&#x21B;ea Total&#x103;</div>
+            <div class="stat-val" id="dGridP">0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Frecven&#x21B;&#x103; Re&#x21B;ea</div>
+            <div class="stat-val" id="dGridHz">50.0 Hz</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Faza L1</div>
+            <div class="stat-val" id="dGridL1">0 V &bull; 0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Faze L2 / L3 (3F)</div>
+            <div class="stat-val" id="dGridL23">-- / --</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Import / Export Azi</div>
+            <div class="stat-val" id="dGridKwh">0 / 0 kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Pene Re&#x21B;ea (7z / 14z / 30z)</div>
+            <div class="stat-val" id="dGridOut">0 / 0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div class="autonomy-title">Alerte Inteligente Telegram</div>
+        <label class="switch-row">
+          <div class="switch-info">
+            <span class="switch-title">Alert&#x103; Pan&#x103; de Re&#x21B;ea</span>
+            <span class="switch-desc">Notific&#x103; la dispari&#x21B;ia &#x219;i revenirea tensiunii</span>
+          </div>
+          <input type="checkbox" switch id="tgGridSwitch" onchange="saveBatteryCfg()">
+        </label>
+        <div class="status-note" id="gridCfgNote"></div>
+      </div>
+    </section>
+
+    <!-- View 2.5: AI ASSISTANT -->
+    <section class="view-pane" id="view-ai" hidden>
+      <div class="view-hdr">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.9"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="2" x2="12" y2="5" />
+            <circle cx="12" cy="2" r="1" fill="#34d399" />
+            <rect x="4" y="5" width="16" height="14" rx="4" />
+            <circle cx="9" cy="11" r="1.4" fill="#38bdf8" stroke="none" />
+            <circle cx="15" cy="11" r="1.4" fill="#38bdf8" stroke="none" />
+            <path d="M9.5 15c.8.7 1.6 1 2.5 1s1.7-.3 2.5-1" />
+            <line x1="2" y1="11" x2="4" y2="11" />
+            <line x1="20" y1="11" x2="22" y2="11" />
+          </svg>
+          <h2>Asistent AI Argus</h2>
+        </div>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; Live</button>
+      </div>
+
+      <div class="glass-card ai-card-shell">
+        <div class="ai-quick-grid">
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('Cum func\u021Bioneaz\u0103 sistemul solar, bateria \u0219i re\u021Beaua chiar acum?')">&#x26A1; Stare sistem acum</button>
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('C\u00E2t va \u021Bine bateria la noapte \u0219i ce autonomie real\u0103 am?')">&#x1F50B; Autonomie la noapte</button>
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('Analizeaz\u0103 produc\u021Bia solar\u0103, consumul casei \u0219i gradul de independen\u021B\u0103 azi \u0219i luna aceasta.')">&#x2600;&#xFE0F; Analiz&#x103; produc&#x21B;ie azi</button>
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('Verific\u0103 tensiunea re\u021Belei (EN 50549-1), temperatura invertorului/bateriei \u0219i set\u0103rile active.')">&#x1F6E1;&#xFE0F; Audit tensiune &amp; set&#x103;ri</button>
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('Estimeaz\u0103 produc\u021Bia solar\u0103 pe urm\u0103toarele 7 zile corel\u00E2nd prognoza meteo Open-Meteo cu istoricul real de produc\u021Bie al invertorului.')">&#x2600;&#xFE0F; Estimare produc&#x21B;ie 7 zile</button>
+          <button type="button" class="ai-chip-btn"
+            onclick="askAiPreset('Care este prognoza meteo pe urm\u0103toarele 7 zile pentru localitatea configurat\u0103?')">&#x1F326;&#xFE0F; Prognoz&#x103; meteo 7 zile</button>
+        </div>
+
+        <button type="button" class="ai-audit-tg-btn" id="btnAiAuditTg" onclick="runAiAuditTelegram()">
+          Trimite Audit pe Telegram
+        </button>
+
+        <div class="ai-chat-box" id="aiChatBox">
+          <div class="ai-msg-bot-row">
+            <div class="ai-bot-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="12" y1="2" x2="12" y2="5" />
+                <rect x="4" y="5" width="16" height="14" rx="4" />
+                <circle cx="9" cy="11" r="1.3" fill="currentColor" stroke="none" />
+                <circle cx="15" cy="11" r="1.3" fill="currentColor" stroke="none" />
+                <path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9" />
+              </svg>
+            </div>
+            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie, autonomie sau re&#x21B;ea.</div>
+          </div>
+        </div>
+
+        <div class="ai-input-row">
+          <input type="text" class="ai-prompt-inp" id="aiPromptInp" placeholder="&#xCE;ntreab&#x103;-l pe Argus..."
+            onkeydown="if(event.key==='Enter'){event.preventDefault();if(!gAiBusy)sendAiCustomPrompt();}">
+          <button type="button" class="ai-send-btn" id="aiSendBtn" aria-label="Trimite" onclick="sendAiCustomPrompt()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="22" y1="2" x2="11" y2="13" />
+              <polygon points="22 2 15 22 11 13 2 9 22 2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sub-view:LOAD DETAILS -->
+    <section class="view-pane" id="view-load" hidden>
+      <div class="view-hdr">
+        <h2>Detalii Consum Cas&#x103;</h2>
+        <button type="button" class="back-btn" onclick="openView('view-live')">&#8592; &#xCE;napoi</button>
+      </div>
+      <div class="glass-card">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <div class="stat-lbl">Consum Instant</div>
+            <div class="stat-val" id="dLoadP">0 W</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Surs&#x103; Activ&#x103;</div>
+            <div class="stat-val" id="dLoadSrc">--</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">Consum Azi</div>
+            <div class="stat-val" id="dLoadToday">0.0 kWh</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-lbl">V&#xE2;rf Azi / Medie Orar&#x103;</div>
+            <div class="stat-val" id="dLoadPeak">-- kW</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Fixed Bottom Navigation (semantic <nav>, non-tablist page navigation) -->
+  <nav class="bottom-nav" aria-label="Navigare principal&#x103;">
+    <div class="bottom-nav-inner">
+      <button type="button" class="nav-btn" id="nav-live" aria-current="page" onclick="openView('view-live')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="2.5" />
+          <path
+            d="M16.2 7.8a6 6 0 0 1 0 8.4M7.8 16.2a6 6 0 0 1 0-8.4M19.1 4.9a10 10 0 0 1 0 14.2M4.9 19.1a10 10 0 0 1 0-14.2" />
+        </svg>
+        <span>Live</span>
+      </button>
+      <button type="button" class="nav-btn" id="nav-history" onclick="openView('view-history')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+        <span>Istoric</span>
+      </button>
+      <button type="button" class="nav-btn" id="nav-ai" onclick="openView('view-ai')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="2" x2="12" y2="5" />
+          <circle cx="12" cy="2" r="0.8" fill="currentColor" />
+          <rect x="4" y="5" width="16" height="14" rx="4" />
+          <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="11" r="1.2" fill="currentColor" stroke="none" />
+          <path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9" />
+          <line x1="2" y1="11" x2="4" y2="11" />
+          <line x1="20" y1="11" x2="22" y2="11" />
+        </svg>
+        <span>AI</span>
+      </button>
+      <button type="button" class="nav-btn" id="nav-battery" onclick="openView('view-battery')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="7" width="18" height="10" rx="2" />
+          <path d="M22 10v4" />
+          <path d="M7 10v4M11 10v4" />
+        </svg>
+        <span>Baterie</span>
+      </button>
+      <button type="button" class="nav-btn" id="nav-settings" onclick="openView('view-settings')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+        <span>Set&#x103;ri</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Native Modal <dialog> for Admin PIN -->
+  <dialog class="native-dialog" id="pinDialog" closedby="any" aria-labelledby="pinDialogTitle">
+    <h3 id="pinDialogTitle" style="margin:0; font-size:16px; font-weight:800;">&#x1F510; PIN Administrator</h3>
+    <p style="margin:0; font-size:12px; color:#94a3b8;">Introdu codul PIN pentru configurare &#x219;i comenzi invertor.
+    </p>
+    <form method="dialog" id="pinForm" style="display:flex; flex-direction:column; gap:10px;">
+      <input class="field-inp" type="password" id="pinInput" inputmode="numeric" maxlength="12" placeholder="ex: 4545"
+        autofocus>
+      <div class="status-note" id="pinErrTxt" style="color:#f87171;"></div>
+      <div class="row-2">
+        <button type="button" class="btn-secondary" onclick="closePinDialog('cancel')">Anuleaz&#x103;</button>
+        <button type="submit" class="btn-primary">Confirm&#x103;</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const fmtKw = (w) => {
+      const n = Number(w) || 0;
+      const abs = Math.abs(n);
+      if (abs >= 1000) return `${n < 0 ? "-" : ""}${(abs / 1000).toFixed(2)} kW`;
+      return `${Math.round(n)} W`;
+    };
+    const fmtBatKw = (w) => fmtKw(w);
+
+    let gCurrentView = "view-live";
+    let gPinRequired = false;
+    let gPinLockedSec = 0;
+    let gSessionPin = localStorage.getItem("deye_local_pin") || "";
+    let gSettingsUnlocked = !!gSessionPin;
+    let gPollFails = 0;
+    let gEcoActive = false;
+    let gEcoSetting = false;
+    let gDemoMode = false;
+    let gLastTel = {};
+    let gChartPts = [];
+    let gHistPeriod = "day";
+    let gBatCapKwh = Math.max(2, parseFloat(localStorage.getItem("dse_bat_kwh") || "10.2") || 10.2);
+    let gBatMinSoc = Math.max(5, Math.min(50, parseInt(localStorage.getItem("dse_bat_min_soc") || "20", 10) || 20));
+    let gYesterdayLoadKwh = null;
+
+    document.getElementById("cfgBatKwh").value = gBatCapKwh;
+    document.getElementById("cfgBatMinSoc").value = gBatMinSoc;
+    document.getElementById("histDateInp").value = new Date().toISOString().slice(0, 10);
+
+    function saveLocalBatCap() {
+      const raw = String(document.getElementById("cfgBatKwh").value || "").replace(",", ".");
+      const v = parseFloat(raw);
+      gBatCapKwh = Math.max(2, Math.min(200, Number.isFinite(v) ? v : 10.2));
+      const mSoc = parseInt(document.getElementById("cfgBatMinSoc").value, 10);
+      gBatMinSoc = Math.max(5, Math.min(50, Number.isFinite(mSoc) ? mSoc : 20));
+      document.getElementById("cfgBatKwh").value = String(gBatCapKwh);
+      document.getElementById("cfgBatMinSoc").value = String(gBatMinSoc);
+      localStorage.setItem("dse_bat_kwh", String(gBatCapKwh));
+      localStorage.setItem("dse_bat_min_soc", String(gBatMinSoc));
+      applyTelemetry(gLastTel);
+    }
+
+    async function loadYesterdayLoad() {
+      try {
+        const y = new Date(Date.now() - 86400000);
+        const yIso = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+        const r = await fetch(`/api/history?period=day&date=${encodeURIComponent(yIso)}`);
+        const h = await r.json();
+        gYesterdayLoadKwh = (h && h.has_data && Number(h.load_kwh) > 0.1) ? Number(h.load_kwh) : null;
+        if (gLastTel && Object.keys(gLastTel).length) applyTelemetry(gLastTel);
+      } catch { }
+    }
+
+    function goBackToLive() {
+      if (gCurrentView === "view-live") return;
+      if (history && history.state && history.state.view && history.state.view !== "view-live") {
+        history.back();
+      } else {
+        openView("view-live", true);
+      }
+    }
+
+    async function openView(viewId, fromPop) {
+      if (viewId === "view-settings" && gPinRequired && !gSettingsUnlocked) {
+        const pin = await ensurePin();
+        if (pin === null) return;
+      }
+      if (!fromPop && viewId !== gCurrentView && history) {
+        if (viewId === "view-live") {
+          if (history.state && history.state.view && history.state.view !== "view-live") {
+            history.back();
+            return;
+          }
+        } else if (gCurrentView === "view-live" && history.pushState) {
+          history.pushState({ view: viewId }, "", "#" + viewId);
+        } else if (history.replaceState) {
+          history.replaceState({ view: viewId }, "", "#" + viewId);
+        }
+      }
+      gCurrentView = viewId;
+      for (const p of document.querySelectorAll(".view-pane")) {
+        p.hidden = (p.id !== viewId);
+      }
+      const navMap = { "view-live": "nav-live", "view-history": "nav-history", "view-ai": "nav-ai", "view-battery": "nav-battery", "view-settings": "nav-settings" };
+      for (const b of document.querySelectorAll(".nav-btn")) {
+        if (b.id === navMap[viewId]) b.setAttribute("aria-current", "page");
+        else b.removeAttribute("aria-current");
+      }
+      if (viewId === "view-history") {
+        loadHistoryData();
+        loadChartData();
+      }
+      if (viewId === "view-settings") {
+        unlockAndLoadSettings();
+      }
+      if (viewId === "view-live") {
+        drawEnergyChart("miniChart", false);
+      }
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+
+    // Back-button / Android edge-sweep guard:
+    // On secondary screens -> returns to Live dashboard; on Live screen -> exits app naturally.
+    if (history && history.replaceState) {
+      history.replaceState({ view: "view-live" }, "", "#view-live");
+    }
+    window.addEventListener("popstate", (e) => {
+      const v = e.state && e.state.view ? e.state.view : "view-live";
+      if (v !== gCurrentView) {
+        openView(v, true);
+      } else if (gCurrentView !== "view-live") {
+        openView("view-live", true);
+      }
+    });
+
+    // Horizontal touch swipe between main tabs & swipe-right back from sub-views
+    (() => {
+      const MAIN_TABS = ["view-live", "view-history", "view-ai", "view-battery", "view-settings"];
+      let sx = 0, sy = 0, swiping = false;
+      document.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) { swiping = false; return; }
+        const tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : "";
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "CANVAS" || (pinDialog && pinDialog.open)) {
+          swiping = false; return;
+        }
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+        swiping = true;
+      }, { passive: true });
+      document.addEventListener("touchend", (e) => {
+        if (!swiping || !e.changedTouches.length) return;
+        swiping = false;
+        const dx = e.changedTouches[0].clientX - sx;
+        const dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+        const idx = MAIN_TABS.indexOf(gCurrentView);
+        if (idx === -1) {
+          if (dx > 56) goBackToLive();
+          return;
+        }
+        if (dx < -56 && idx < MAIN_TABS.length - 1) openView(MAIN_TABS[idx + 1]);
+        else if (dx > 56 && idx > 0) openView(MAIN_TABS[idx - 1]);
+      }, { passive: true });
+    })();
+
+    // Native <dialog> PIN manager with light-dismiss fallback (modern-web-guidance: dialog)
+    const pinDialog = document.getElementById("pinDialog");
+    if (pinDialog && !("closedBy" in HTMLDialogElement.prototype)) {
+      const outside = (e) => {
+        const r = pinDialog.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      let pressedOut = false;
+      pinDialog.addEventListener("pointerdown", (e) => { pressedOut = outside(e); });
+      pinDialog.addEventListener("pointerup", (e) => { if (pressedOut && outside(e)) closePinDialog("cancel"); });
+    }
+
+    let gPinResolver = null;
+    function closePinDialog(val) {
+      if (pinDialog.open) pinDialog.close(val);
+    }
+    if (pinDialog) {
+      pinDialog.addEventListener("close", () => {
+        const rv = pinDialog.returnValue;
+        pinDialog.returnValue = "";
+        if (gPinResolver) {
+          const resolve = gPinResolver;
+          gPinResolver = null;
+          if (rv !== "ok") resolve(null);
+        }
+      });
+    }
+
+    document.getElementById("pinForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pinVal = document.getElementById("pinInput").value.trim();
+      const errEl = document.getElementById("pinErrTxt");
+      errEl.innerText = "Se verific\u0103...";
+      try {
+        const r = await fetch("/api/pin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin: pinVal }),
+        });
+        const j = await r.json();
+        if (r.ok && j.ok) {
+          localStorage.setItem("deye_local_pin", pinVal);
+          gSessionPin = pinVal;
+          gSettingsUnlocked = true;
+          const resolve = gPinResolver;
+          gPinResolver = null;
+          pinDialog.close("ok");
+          if (resolve) resolve(pinVal);
+        } else {
+          errEl.innerText = j.error || "PIN gre\u0219it!";
+        }
+      } catch {
+        errEl.innerText = "Eroare conexiune ESP32-S3.";
+      }
+    });
+
+    async function ensurePin() {
+      if (!gPinRequired) return "";
+      const saved = gSessionPin || localStorage.getItem("deye_local_pin") || "";
+      if (saved) { gSessionPin = saved; gSettingsUnlocked = true; return saved; }
+      if (gPinLockedSec > 0) {
+        alert(`Acces blocat temporar (${Math.ceil(gPinLockedSec / 60)} min).`);
+        return null;
+      }
+      document.getElementById("pinInput").value = "";
+      document.getElementById("pinErrTxt").innerText = "";
+      pinDialog.showModal();
+      return await new Promise((res) => { gPinResolver = res; });
+    }
+
+    // Wake Lock + reusable canvas captureStream video fallback over http://
+    let gKeepScreen = (localStorage.getItem("deye_keep_screen") !== "0");
+    let gWakeSentinel = null;
+    let gWakeVideo = null;
+    let gWakeTimer = null;
+
+    const SVG_SUN = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+    const SVG_MOON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+
+    function updateWakeBtn(active) {
+      const btn = document.getElementById("wakeLockBtn");
+      if (!btn) return;
+      btn.setAttribute("aria-pressed", gKeepScreen ? "true" : "false");
+      if (!gKeepScreen) {
+        btn.classList.remove("on");
+        btn.innerHTML = SVG_MOON;
+        btn.title = "Ecran normal (apas\u0103 pentru a men\u021Bine ecranul aprins)";
+      } else if (active) {
+        btn.classList.add("on");
+        btn.innerHTML = SVG_SUN;
+        btn.title = "Ecran activ continuu (apas\u0103 pentru dezactivare)";
+      } else {
+        btn.classList.remove("on");
+        btn.innerHTML = SVG_SUN;
+        btn.title = "Atinge pagina pentru a activa blocarea stingerii ecranului";
+      }
+    }
+
+    function initWakeVideo() {
+      if (gWakeVideo) return gWakeVideo;
+      try {
+        const cv = document.createElement("canvas");
+        cv.width = 2; cv.height = 2;
+        const ctx = cv.getContext("2d");
+        let t = 0;
+        const draw = () => { if (ctx) { ctx.fillStyle = (t++ % 2) ? "#010101" : "#000000"; ctx.fillRect(0, 0, 2, 2); } };
+        draw();
+        const cap = cv.captureStream ? cv.captureStream(1) : null;
+        if (!cap) return null;
+        const v = document.createElement("video");
+        v.muted = true; v.playsInline = true; v.loop = true;
+        v.style.cssText = "position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;bottom:0;right:0;";
+        v.srcObject = cap;
+        document.body.appendChild(v);
+        gWakeVideo = v;
+        gWakeVideo._draw = draw;
+        return gWakeVideo;
+      } catch { return null; }
+    }
+
+    async function ensureWakeLock() {
+      if (!gKeepScreen) {
+        if (gWakeSentinel) { try { await gWakeSentinel.release(); } catch { } gWakeSentinel = null; }
+        if (gWakeTimer) { clearInterval(gWakeTimer); gWakeTimer = null; }
+        if (gWakeVideo) { try { gWakeVideo.pause(); } catch { } }
+        updateWakeBtn(false);
+        return;
+      }
+      if (document.visibilityState !== "visible") return;
+      if (window.isSecureContext && navigator.wakeLock) {
+        try {
+          if (!gWakeSentinel) {
+            gWakeSentinel = await navigator.wakeLock.request("screen");
+            gWakeSentinel.addEventListener("release", () => { gWakeSentinel = null; updateWakeBtn(false); });
+          }
+          updateWakeBtn(true);
+          return;
+        } catch { gWakeSentinel = null; }
+      }
+      const v = initWakeVideo();
+      if (v) {
+        try {
+          if (!gWakeTimer) gWakeTimer = setInterval(() => { if (gKeepScreen && v._draw) v._draw(); }, 4000);
+          await v.play();
+          updateWakeBtn(true);
+          return;
+        } catch { }
+      }
+      updateWakeBtn(false);
+    }
+
+    function toggleKeepScreen() {
+      gKeepScreen = !gKeepScreen;
+      localStorage.setItem("deye_keep_screen", gKeepScreen ? "1" : "0");
+      ensureWakeLock();
+    }
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") ensureWakeLock(); });
+    document.addEventListener("pointerdown", () => { if (gKeepScreen) ensureWakeLock(); }, { passive: true });
+    ensureWakeLock();
+
+    // Header Chips & Wi-Fi
+    function setChip(idVal, idBox, val, suffix, titleTxt, warnAt, critAt) {
+      const el = document.getElementById(idVal);
+      const box = document.getElementById(idBox);
+      if (typeof val === "number" && Number.isFinite(val)) {
+        const v = suffix === "%" ? Math.max(0, Math.min(100, Math.round(val))) : Number(val.toFixed(0));
+        el.innerText = v + suffix;
+        el.className = "sys-chip-val " + (v >= critAt ? "crit" : (v >= warnAt ? "warn" : "ok"));
+      } else {
+        el.innerText = "--" + suffix;
+        el.className = "sys-chip-val";
+      }
+      if (box && titleTxt) box.title = titleTxt;
+    }
+
+    function updateHeaderMetrics(d) {
+      if (!d) {
+        setChip("cpuPctVal", "cpuChip", null, "%", "CPU: --", 65, 85);
+        setChip("ramPctVal", "ramChip", null, "%", "RAM: --", 65, 85);
+        setChip("stoPctVal", "stoChip", null, "%", "STOC: --", 65, 85);
+        setChip("espTempVal", "tempChip", null, "\u00B0C", "TEMP: --", 55, 72);
+        return;
+      }
+      const mhz = d.cpu_mhz || (d.wifi_eco ? 160 : 240);
+      setChip("cpuPctVal", "cpuChip", d.cpu_pct, "%", `CPU ESP32-S3 (${mhz} MHz Dual-Core): ${d.cpu_pct ?? "--"}%`, 65, 85);
+      setChip("ramPctVal", "ramChip", d.ram_pct, "%", `RAM: ${d.ram_used_kb || 0}/${d.ram_total_kb || 0} KB | PSRAM: ${d.psram_pct || 0}%`, 65, 85);
+      setChip("stoPctVal", "stoChip", d.storage_pct, "%", `Slot OTA: ${((d.storage_used_kb || 0) / 1024).toFixed(2)}/${((d.storage_total_kb || 0) / 1024).toFixed(2)} MB | SPIFFS: ${d.spiffs_used_kb || 0}/${d.spiffs_total_kb || 0} KB`, 65, 85);
+      setChip("espTempVal", "tempChip", d.esp_temp_ok ? d.esp_temp_c : null, "\u00B0C", `Temperatura intern\u0103 cip ESP32-S3: ${d.esp_temp_ok ? Number(d.esp_temp_c).toFixed(1) : "--"} \u00B0C`, 55, 72);
+    }
+
+    function updateWifiBars(online, rssi, eco, txDbm, cpuMhz) {
+      const box = document.getElementById("wifiBars");
+      const bars = box.querySelectorAll(".wifi-bar");
+      let active = 0;
+      if (online && typeof rssi === "number" && rssi < 0) {
+        active = rssi >= -66 ? 5 : rssi >= -73 ? 4 : rssi >= -80 ? 3 : rssi >= -87 ? 2 : 1;
+        box.title = `Wi-Fi ESP32-S3: ${rssi} dBm (${active}/5) | ${eco ? "Mod Eco" : "Normal"} (TX ${txDbm || 20} dBm, ${cpuMhz || 240} MHz)`;
+      } else {
+        box.title = "Wi-Fi ESP32-S3: f\u0103r\u0103 semnal";
+      }
+      bars.forEach((b, i) => b.classList.toggle("on", i < active));
+    }
+
+    // Telemetry Rendering
+    function applyTelemetry(d) {
+      d = d || {};
+      gLastTel = d;
+      const hasLive = !!(d.logger_connected || gDemoMode);
+      const pvW = Number(d.pv_power_w || 0);
+      const gridW = Number(d.grid_power_w || 0);
+      const batW = Number(d.battery_power_w || 0);
+      const loadW = Number(d.load_power_w || 0);
+      const soc = Math.max(0, Math.min(100, Number(d.battery_soc || 0)));
+
+      document.getElementById("livePvVal").innerText = fmtKw(pvW);
+      document.getElementById("livePvSub").innerText = `Azi: ${Number(d.pv_today_kwh || 0).toFixed(1)} kWh`;
+
+      document.getElementById("liveGridVal").innerText = fmtKw(-gridW);
+      const gridState = gridW < -30 ? "Export" : (gridW > 30 ? "Import" : "Neutru");
+      document.getElementById("liveGridSub").innerText = hasLive
+        ? `${gridState} \u2022 ${Math.round(d.grid_volts || 230)}V`
+        : "Offline \u2022 --V";
+
+      document.getElementById("liveBatVal").innerText = fmtBatKw(batW);
+      const batState = batW > 40 ? "\u00CEnc\u0103rcare" : (batW < -40 ? "Desc\u0103rcare" : "Standby");
+      document.getElementById("liveBatSub").innerText = hasLive
+        ? `${batState} \u2022 ${Number(d.battery_volts || 0).toFixed(1)}V`
+        : "Offline \u2022 --V";
+      document.getElementById("liveSocTxt").innerText = hasLive ? `${Math.round(soc)}%` : "--%";
+      document.getElementById("socRingArc").style.strokeDashoffset = hasLive ? (119.4 * (1 - soc / 100)).toFixed(1) : "119.4";
+
+      document.getElementById("liveLoadVal").innerText = fmtKw(loadW);
+      document.getElementById("liveLoadSub").innerText = `Azi: ${Number(d.load_today_kwh || 0).toFixed(1)} kWh`;
+
+      const ph = Number(d.inv_phases || 1) === 3 ? "3F" : "1F";
+      const invT = Number(d.inverter_temp_c || 0);
+      const ratedW = Number(d.inverter_rated_w || 0);
+      const ratedTxt = ratedW >= 1000 ? `${(ratedW / 1000).toFixed(ratedW % 1000 === 0 ? 0 : 1)}kW` : (ratedW > 0 ? `${ratedW}W` : "");
+      document.getElementById("coreMeta").innerText = ratedTxt
+        ? `${ph} \u2022 ${ratedTxt} \u2022 ${invT > 0 ? Math.round(invT) + "\u00B0C" : "--\u00B0C"}`
+        : `${ph} \u2022 ${invT > 0 ? Math.round(invT) + "\u00B0C" : "--\u00B0C"}`;
+
+      // Autonomy based on yesterday's 24h average consumption (fallback: today's hourly average), respecting SoC min discharge limit
+      const usableKwh = Math.max(0, ((soc - gBatMinSoc) / 100) * gBatCapKwh);
+      const avgKw = Number(d.load_avg_hourly_kw || 0);
+      const yestLoad = gDemoMode ? 13.5 : gYesterdayLoadKwh;
+      const hasYest = (typeof yestLoad === "number" && yestLoad > 0.1);
+      const rateKw = hasYest
+        ? (yestLoad / 24)
+        : (avgKw > 0.1 ? avgKw : (loadW > 80 ? (loadW / 1000) : 0.50));
+      const hours = usableKwh / rateKw;
+      const hInt = Math.min(99, Math.floor(hours));
+      const mInt = Math.floor((hours - Math.floor(hours)) * 60);
+      const autEl = document.getElementById("autonomyVal");
+      if (!d.logger_connected && !gDemoMode) {
+        autEl.innerText = "--";
+        autEl.title = "Invertor deconectat — autonomie indisponibil\u0103";
+      } else {
+        autEl.innerText = hours >= 99 ? ">99h" : `${hInt}h ${String(mInt).padStart(2, "0")}m`;
+        autEl.title = (hasYest
+          ? `Baza: media de ieri ${yestLoad.toFixed(1)} kWh/zi (${rateKw.toFixed(2)} kW/h)`
+          : `Baza: media orar\u0103 azi (${rateKw.toFixed(2)} kW/h)`) + ` | Rezerv\u0103 SoC min: ${gBatMinSoc}%`;
+      }
+
+      const loadDay = Number(d.load_today_kwh || 0);
+      const buyDay = Number(d.grid_buy_today_kwh || 0);
+      let indep = 0;
+      if (d.logger_connected || gDemoMode) {
+        indep = 100;
+        if (loadDay > 0.05) indep = Math.max(0, Math.min(100, Math.round((1 - buyDay / loadDay) * 100)));
+        else if (loadW > 30) indep = Math.max(0, Math.min(100, Math.round((1 - Math.max(0, gridW) / loadW) * 100)));
+      }
+      document.getElementById("indepBadge").innerText = (d.logger_connected || gDemoMode) ? `${indep}% Independent` : "--% Independent";
+
+      // Quick Pills
+      gEcoActive = !!d.wifi_eco;
+      const qEco = document.getElementById("quickEcoBtn");
+      qEco.classList.toggle("eco-on", gEcoActive);
+      qEco.setAttribute("aria-checked", gEcoActive ? "true" : "false");
+      document.getElementById("quickEcoTag").innerText = gEcoActive ? "ACTIV" : "NORMAL";
+
+      const chgA = Number(d.bat_max_chg_a || 0);
+      document.getElementById("quickChgTag").innerText = (d.bat_sched_enabled && chgA === 0) ? "PAUZ\u0102 0A" : (chgA > 0 ? `${chgA}A` : "-- A");
+
+      // Sub-views
+      document.getElementById("dPvTotal").innerText = fmtKw(pvW);
+      document.getElementById("dPvKwh").innerText = `${Number(d.pv_today_kwh || 0).toFixed(1)} / ${Number(d.pv_total_kwh || 0).toFixed(0)} kWh`;
+      document.getElementById("dPv1").innerText = `${Math.round(d.pv1_power_w || 0)} W \u2022 ${Math.round(d.pv1_volts || 0)} V`;
+      document.getElementById("dPv2").innerText = `${Math.round(d.pv2_power_w || 0)} W \u2022 ${Math.round(d.pv2_volts || 0)} V`;
+      document.getElementById("dPv3").innerText = `${Math.round(d.pv3_power_w || 0)} W`;
+      document.getElementById("dPv4").innerText = `${Math.round(d.pv4_power_w || 0)} W`;
+
+      const invStMap = { 0: "Standby", 1: "Auto-Test", 2: "Normal (Activ)", 3: "Avarie / Fault" };
+      const invSt = hasLive ? (invStMap[Number(d.inverter_status)] || "Activ") : "Offline";
+      document.getElementById("dInvStatus").innerText = invSt;
+      document.getElementById("dInvTemp").innerText = (hasLive && invT > 0) ? `${invT.toFixed(1)} \u00B0C` : "-- \u00B0C";
+      document.getElementById("dInvType").innerText = ph === "3F" ? "Hibrid Trifazat (3F)" : "Hibrid Monofazat (1F)";
+      document.getElementById("dInvPv").innerText = fmtKw(pvW);
+      document.getElementById("dInvRated").innerText = ratedW >= 1000 ? `${(ratedW / 1000).toFixed(ratedW % 1000 === 0 ? 0 : 1)} kW` : (ratedW > 0 ? `${ratedW} W` : "-- kW");
+      document.getElementById("dInvSn").innerText = d.inverter_sn || "--";
+      document.getElementById("dLogSn").innerText = d.logger_sn ? String(d.logger_sn) : "--";
+      document.getElementById("dLogMac").innerText = d.logger_mac || "--";
+      document.getElementById("dInvPfHz").innerText = hasLive
+        ? `PF ${Number(d.load_pf || 1).toFixed(2)} \u2022 ${Number(d.grid_hz || 50).toFixed(2)} Hz`
+        : "PF -- \u2022 -- Hz";
+      document.getElementById("dInvStateStr").innerText = d.logger_connected ? "Online (TCP 8899)" : (d.status_str || "Deconectat");
+      document.getElementById("dEspCpu").innerText = `${Math.round(d.cpu_pct || 0)}% @ ${d.cpu_mhz || 240} MHz`;
+      document.getElementById("dEspMem").innerText = `${Math.round(d.ram_pct || 0)}% / ${Math.round(d.storage_pct || 0)}%`;
+      document.getElementById("dEspTemp").innerText = d.esp_temp_ok ? `${Number(d.esp_temp_c || 0).toFixed(1)} \u00B0C` : "-- \u00B0C";
+      document.getElementById("dEspWifi").innerText = `${d.wifi_rssi || "--"} dBm \u2022 ${d.wifi_eco ? "Eco" : "Normal"}`;
+
+      document.getElementById("dGridP").innerText = fmtKw(-gridW);
+      document.getElementById("dGridHz").innerText = hasLive ? `${Number(d.grid_hz || 50).toFixed(2)} Hz` : "-- Hz";
+      document.getElementById("dGridL1").innerText = hasLive
+        ? `${Math.round(d.grid_volts || 0)} V \u2022 ${-Math.round(d.grid_l1_power_w || gridW)} W`
+        : "-- V \u2022 0 W";
+      document.getElementById("dGridL23").innerText = (ph === "3F")
+        ? `${Math.round(d.grid_l2_volts || 0)}V / ${Math.round(d.grid_l3_volts || 0)}V`
+        : "Monofazat";
+      document.getElementById("dGridKwh").innerText = `${Number(d.grid_buy_today_kwh || 0).toFixed(1)} / ${Number(d.grid_sell_today_kwh || 0).toFixed(1)} kWh`;
+      document.getElementById("dGridOut").innerText = `${d.grid_outages_7d || 0} / ${d.grid_outages_14d || 0} / ${d.grid_outages_30d || 0}`;
+
+      document.getElementById("dLoadP").innerText = fmtKw(loadW);
+      document.getElementById("dLoadSrc").innerText = d.load_source_str || "--";
+      document.getElementById("dLoadToday").innerText = `${Number(d.load_today_kwh || 0).toFixed(1)} kWh`;
+      document.getElementById("dLoadPeak").innerText = `${Number(d.load_peak_today_kw || 0).toFixed(2)} kW / ${Number(d.load_avg_hourly_kw || 0).toFixed(2)} kW`;
+
+      // Battery View
+      document.getElementById("bSoc").innerText = hasLive ? `${Math.round(soc)}%` : "--%";
+      document.getElementById("bSoh").innerText = hasLive ? `${Math.round(d.battery_soh || 99)}%` : "--%";
+      document.getElementById("bVI").innerText = hasLive
+        ? `${Number(d.battery_volts || 0).toFixed(1)} V / ${Number(d.battery_current || 0).toFixed(1)} A`
+        : "-- V / -- A";
+      document.getElementById("bTemp").innerText = hasLive ? `${Number(d.battery_temp_c || 0).toFixed(1)} \u00B0C` : "-- \u00B0C";
+      document.getElementById("bMaxA").innerText = `${chgA} A`;
+      document.getElementById("bNormA").innerText = `${Number(d.bat_norm_chg_a || 0)} A`;
+
+      syncBatteryControls(d);
+    }
+
+    let gBatSyncLock = false;
+    function syncBatteryControls(d) {
+      if (gBatSyncLock) return;
+      if (typeof d.bat_sched_enabled === "boolean") document.getElementById("batSchedSwitch").checked = d.bat_sched_enabled;
+      if (typeof d.tg_bms_alert === "boolean") document.getElementById("tgBmsSwitch").checked = d.tg_bms_alert;
+      if (typeof d.tg_grid_alert === "boolean") document.getElementById("tgGridSwitch").checked = d.tg_grid_alert;
+      if (typeof d.tg_bat_freeze_alert === "boolean") document.getElementById("tgFreezeSwitch").checked = d.tg_bat_freeze_alert;
+      if (typeof d.bat_freeze_temp === "number" && document.activeElement !== document.getElementById("batFreezeInp")) {
+        document.getElementById("batFreezeInp").value = d.bat_freeze_temp;
+      }
+      const fmtMin = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      if (typeof d.bat_pause_start === "number" && document.activeElement !== document.getElementById("batStartInp")) {
+        document.getElementById("batStartInp").value = fmtMin(d.bat_pause_start);
+      }
+      if (typeof d.bat_pause_end === "number" && document.activeElement !== document.getElementById("batEndInp")) {
+        document.getElementById("batEndInp").value = fmtMin(d.bat_pause_end);
+      }
+      renderScheduleBar();
+    }
+
+    function renderScheduleBar() {
+      const seg = document.getElementById("schedSeg");
+      const en = document.getElementById("batSchedSwitch").checked;
+      const toM = (s) => { const [h, m] = (s || "06:00").split(":").map(Number); return (h * 60) + (m || 0); };
+      const st = toM(document.getElementById("batStartInp").value);
+      const ed = toM(document.getElementById("batEndInp").value);
+      if (en && ed > st) {
+        seg.style.display = "flex";
+        seg.style.left = (st / 1440 * 100).toFixed(1) + "%";
+        seg.style.width = ((ed - st) / 1440 * 100).toFixed(1) + "%";
+        seg.innerText = "Pauz\u0103 0A";
+      } else {
+        seg.style.display = "none";
+      }
+    }
+
+    // Mockup-Identical Curved Neon Energy Paths + Traveling Mini Luminous Stars (Electrons)
+    let flowPhase = 0;
+
+    function roundedPathGeom(pts, r) {
+      const [p0, p1, p2] = pts;
+      const dx1 = p1[0] - p0[0], dy1 = p1[1] - p0[1];
+      const dx2 = p2[0] - p1[0], dy2 = p2[1] - p1[1];
+      const l1 = Math.hypot(dx1, dy1) || 1, l2 = Math.hypot(dx2, dy2) || 1;
+      const rr = Math.min(r, l1 * 0.65, l2 * 0.65);
+      const q1x = p1[0] - (dx1 / l1) * rr, q1y = p1[1] - (dy1 / l1) * rr;
+      const q2x = p1[0] + (dx2 / l2) * rr, q2y = p1[1] + (dy2 / l2) * rr;
+      const s1 = Math.max(0, l1 - rr), s2 = Math.max(0, l2 - rr), sc = rr * 1.55;
+      return {
+        d: `M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} L ${q1x.toFixed(1)} ${q1y.toFixed(1)} Q ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} ${q2x.toFixed(1)} ${q2y.toFixed(1)} L ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`,
+        p0, p1, p2, q1: [q1x, q1y], q2: [q2x, q2y], s1, sc, s2, tot: (s1 + sc + s2) || 1
+      };
+    }
+
+    function evalRoundedPoint(g, t) {
+      const d = Math.max(0, Math.min(1, t)) * g.tot;
+      if (d <= g.s1) {
+        const u = g.s1 > 0 ? d / g.s1 : 0;
+        return [g.p0[0] + (g.q1[0] - g.p0[0]) * u, g.p0[1] + (g.q1[1] - g.p0[1]) * u];
+      }
+      if (d <= g.s1 + g.sc) {
+        const u = g.sc > 0 ? (d - g.s1) / g.sc : 0, iu = 1 - u;
+        return [
+          iu * iu * g.q1[0] + 2 * iu * u * g.p1[0] + u * u * g.q2[0],
+          iu * iu * g.q1[1] + 2 * iu * u * g.p1[1] + u * u * g.q2[1]
+        ];
+      }
+      const u = g.s2 > 0 ? (d - g.s1 - g.sc) / g.s2 : 1;
+      return [g.q2[0] + (g.p2[0] - g.q2[0]) * u, g.q2[1] + (g.p2[1] - g.q2[1]) * u];
+    }
+
+    function miniStarElectron(x, y, color, starColor, scale) {
+      const s = scale || 1;
+      return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${s.toFixed(2)})" opacity="0.82">
+        <circle cx="0" cy="0" r="1.7" fill="${color}" opacity="0.45"/>
+        <path d="M 0 -2.0 L 0.55 -0.55 L 2.0 0 L 0.55 0.55 L 0 2.0 L -0.55 0.55 L -2.0 0 L -0.55 -0.55 Z" fill="${starColor}"/>
+      </g>`;
+    }
+
+    function neonArrowHead(tip, from, color) {
+      const ang = Math.atan2(tip[1] - from[1], tip[0] - from[0]) * 180 / Math.PI;
+      return `<g transform="translate(${tip[0].toFixed(1)},${tip[1].toFixed(1)}) rotate(${ang.toFixed(1)})" filter="url(#neonGlow)">
+        <polygon points="-2,-5.5 9.5,0 -2,5.5 0.5,0" fill="${color}"/>
+        <polygon points="0,-2.6 6.2,0 0,2.6" fill="#ffffff" opacity="0.9"/>
+      </g>`;
+    }
+
+    function animBeams() {
+      flowPhase = (flowPhase + 0.95) % 100;
+      const g = document.getElementById("flowBeams");
+      const hub = document.getElementById("flowHub");
+      const svg = document.getElementById("flowSvg");
+      if (g && hub && svg && gCurrentView === "view-live") {
+        const hb = hub.getBoundingClientRect();
+        const pv = document.getElementById("nodePv").getBoundingClientRect();
+        const gr = document.getElementById("nodeGrid").getBoundingClientRect();
+        const ba = document.getElementById("nodeBat").getBoundingClientRect();
+        const lo = document.getElementById("nodeLoad").getBoundingClientRect();
+        const co = document.getElementById("inverterCore").getBoundingClientRect();
+
+        if (hb.width > 50 && hb.height > 50) {
+          svg.setAttribute("viewBox", `0 0 ${hb.width.toFixed(0)} ${hb.height.toFixed(0)}`);
+          const rel = (r) => ({
+            cx: (r.left + r.width / 2) - hb.left,
+            cy: (r.top + r.height / 2) - hb.top,
+            l: r.left - hb.left, r: r.right - hb.left,
+            t: r.top - hb.top, b: r.bottom - hb.top
+          });
+          const pR = rel(pv), gR = rel(gr), bR = rel(ba), lR = rel(lo), cR = rel(co);
+
+          const d = gLastTel || {};
+          const pvOn = Number(d.pv_power_w || 0) > 25;
+          const grW = Number(d.grid_power_w || 0);
+          const grOn = Math.abs(grW) > 25;
+          const baW = Number(d.battery_power_w || 0);
+          const baOn = Math.abs(baW) > 25;
+          const loOn = Number(d.load_power_w || 0) > 25;
+
+          const out = [];
+          const baseT = flowPhase / 100;
+          const drawNeonCurve = (ptsRaw, color, haloColor, starColor, active, reverse, radius) => {
+            const pts = reverse ? [...ptsRaw].reverse() : ptsRaw;
+            const geom = roundedPathGeom(pts, radius || 18);
+            if (!active) {
+              out.push(`<path d="${geom.d}" fill="none" stroke="${color}" stroke-width="2" stroke-opacity="0.16" stroke-linecap="round"/>`);
+              return;
+            }
+            // 1. Wide outer neon aura
+            out.push(`<path d="${geom.d}" fill="none" stroke="${haloColor}" stroke-width="11" stroke-opacity="0.26" stroke-linecap="round" filter="url(#neonHalo)"/>`);
+            // 2. Crisp glowing neon tube
+            out.push(`<path d="${geom.d}" fill="none" stroke="${color}" stroke-width="3.2" stroke-opacity="0.84" stroke-linecap="round" filter="url(#neonGlow)"/>`);
+            // 3. Soft inner filament
+            out.push(`<path d="${geom.d}" fill="none" stroke="${starColor}" stroke-width="0.9" stroke-opacity="0.38" stroke-linecap="round"/>`);
+            // 4. Closely-spaced discreet luminous stars in a lighter shade of the conductor
+            const count = 6;
+            for (let k = 0; k < count; k++) {
+              const t = (baseT + k / count) % 1;
+              const [sx, sy] = evalRoundedPoint(geom, t);
+              const edgeFade = t < 0.08 ? t / 0.08 : (t > 0.92 ? (1 - t) / 0.08 : 1);
+              out.push(miniStarElectron(sx, sy, color, starColor, 0.72 + 0.28 * edgeFade));
+            }
+            // 5. Glowing arrowhead at destination
+            out.push(neonArrowHead(pts[2], pts[1], color));
+          };
+
+          // Exact Mockup Curve Topology:
+          // 1a. SOLAR PV (right edge) -> curves down into DEYE top
+          drawNeonCurve(
+            [[pR.r + 2, pR.cy - 4], [cR.cx, pR.cy - 4], [cR.cx, cR.t - 9]],
+            "#fde047", "#f59e0b", "#fef9c3", pvOn, false, 20
+          );
+          // 1b. SOLAR PV (bottom) -> curves right into DEYE left
+          drawNeonCurve(
+            [[pR.cx + 8, pR.b + 2], [pR.cx + 8, cR.cy - 2], [cR.l - 9, cR.cy - 2]],
+            "#fde047", "#f59e0b", "#fef9c3", pvOn, false, 20
+          );
+          // 2. DEYE (upper-right) <-> RETEA (bottom)
+          const grRev = grW > 0;
+          drawNeonCurve(
+            [[cR.r + (grRev ? 9 : 2), cR.cy - 5], [gR.cx - 8, cR.cy - 5], [gR.cx - 8, gR.b + (grRev ? 2 : 9)]],
+            "#93c5fd", "#6366f1", "#e0e7ff", grOn, grRev, 18
+          );
+          // 3. DEYE (bottom) <-> BATERIE (right edge, cleanly below DEYE overlap & beside SoC ring)
+          const baRev = baW < 0;
+          const batY = bR.t + 54;
+          drawNeonCurve(
+            [[cR.cx, cR.b + (baRev ? 9 : 2)], [cR.cx, batY], [bR.r + (baRev ? 2 : 9), batY]],
+            "#6ee7b7", "#10b981", "#d1fae5", baOn, baRev, 16
+          );
+          // 4. DEYE (lower-right) -> CONSUM CASA (top)
+          drawNeonCurve(
+            [[cR.r + 2, cR.cy + 5], [lR.cx - 8, cR.cy + 5], [lR.cx - 8, lR.t - 9]],
+            "#7dd3fc", "#0ea5e9", "#e0f2fe", loOn, false, 18
+          );
+
+          g.innerHTML = out.join("");
+        }
+      }
+      requestAnimationFrame(animBeams);
+    }
+    requestAnimationFrame(animBeams);
+
+    // Charts (Smooth Cubic Bezier Spline + Crisp Padding so 06:00 / 20:00 Never Clip)
+    function drawSmoothSpline(ctx, ptsXY, closeBaseY) {
+      if (ptsXY.length < 2) return;
+      ctx.beginPath();
+      if (closeBaseY !== undefined) ctx.moveTo(ptsXY[0][0], closeBaseY);
+      ctx.lineTo(ptsXY[0][0], ptsXY[0][1]);
+      for (let i = 0; i < ptsXY.length - 1; i++) {
+        const p0 = ptsXY[i === 0 ? 0 : i - 1];
+        const p1 = ptsXY[i];
+        const p2 = ptsXY[i + 1];
+        const p3 = ptsXY[i + 2 < ptsXY.length ? i + 2 : ptsXY.length - 1];
+        const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2[0], p2[1]);
+      }
+      if (closeBaseY !== undefined) {
+        ctx.lineTo(ptsXY[ptsXY.length - 1][0], closeBaseY);
+        ctx.closePath();
+      }
+    }
+
+    let gDemoStartMs = 0;
+    function getDemoSimState() {
+      // 24h virtual inverter cycle in 120s (starts at ~12:00 solar peak on enable)
+      const sec = ((Date.now() - gDemoStartMs) / 1000 + 60) % 120;
+      const hour = (sec / 120) * 24;
+      const minNow = Math.round(hour * 60);
+      const calcAtHour = (h) => {
+        const sun = (h >= 6 && h <= 19) ? Math.sin(((h - 6) / 13) * Math.PI) : 0;
+        const pv = Math.round(Math.max(0, 4850 * Math.pow(sun, 1.35)));
+        const load = Math.round(480 + 900 * Math.exp(-Math.pow((h - 8) / 1.5, 2)) + 2150 * Math.exp(-Math.pow((h - 19.5) / 2.2, 2)) + (h >= 7 && h <= 22 ? 320 : 0));
+        const soc = Math.round(Math.max(18, Math.min(98, 28 + 68 * Math.sin(Math.max(0, Math.min(1, (h - 6) / 14)) * Math.PI * 0.65))));
+        const sur = pv - load;
+        let bat = 0;
+        if (sur > 250 && soc < 98) bat = Math.round(Math.min(2500, sur * 0.68));
+        else if (sur < -180 && soc > 20) bat = -Math.round(Math.min(2100, Math.abs(sur) * 0.65));
+        const grid = load + bat - pv;
+        return { m: Math.round(h * 60), pv, load, soc, bat, grid };
+      };
+      const cur = calcAtHour(hour);
+      const pts = [];
+      for (let m = 0; m <= minNow; m += 60) {
+        const p = calcAtHour(m / 60);
+        pts.push({ m, pv: p.pv, load: p.load, soc: p.soc });
+      }
+      if (pts.length === 0 || pts[pts.length - 1].m < minNow) {
+        pts.push({ m: minNow, pv: cur.pv, load: cur.load, soc: cur.soc });
+      }
+      return { cur, pts, hour };
+    }
+
+    function getChartDisplayPoints() {
+      if (gDemoMode) return getDemoSimState().pts;
+      return Array.isArray(gChartPts) ? gChartPts : [];
+    }
+
+    function drawEnergyChart(canvasId, detailed) {
+      const cv = document.getElementById(canvasId);
+      if (!cv) return;
+      const rect = cv.getBoundingClientRect();
+      if (rect.width < 10 || rect.height < 10) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = Math.round(rect.width * dpr);
+      cv.height = Math.round(rect.height * dpr);
+      const ctx = cv.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      const W = rect.width, H = rect.height;
+      const padL = 34, padR = 18, padT = 12, padB = 22;
+      const cw = W - padL - padR, ch = H - padT - padB;
+      ctx.clearRect(0, 0, W, H);
+
+      const pts = getChartDisplayPoints();
+      const peakW = Math.max(0, ...pts.map(p => Math.max(p.pv || 0, p.load || 0)));
+      // Dynamic Y-axis in kW: minimum 3.0 kW, steps up by 0.5 kW (3.5, 4.0, ...) as power approaches max
+      const maxKw = Math.max(3.0, Math.ceil((peakW / 1000) * 1.12 * 2) / 2);
+      const maxW = maxKw * 1000;
+
+      // Fixed 24h X-axis (00:00 -> 24:00 = 0..1440 min) and dynamic Y-axis
+      const mapX = (m) => padL + (Math.max(0, Math.min(1440, Number(m) || 0)) / 1440) * cw;
+      const mapY = (w) => padT + ch - (Math.max(0, Math.min(maxW, w)) / maxW) * ch;
+
+      // Horizontal demarcation lines: 1 kW steps when maxKw < 4.0 (0, 1, 2, 3), then 2 kW steps once >= 4.0
+      const stepKw = maxKw < 4.0 ? 1 : 2;
+      ctx.lineWidth = 1;
+      ctx.font = "600 9.5px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let kw = 0; kw <= maxKw + 0.001; kw += stepKw) {
+        const y = mapY(kw * 1000);
+        ctx.strokeStyle = kw === 0 ? "rgba(148,163,184,0.22)" : "rgba(148,163,184,0.14)";
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText(kw === 0 ? "0" : `${kw}kW`, padL - 5, y);
+      }
+      // Show top dynamic max label (e.g. 3.5kW, 5.5kW) if not already drawn on a step tick
+      if (Math.abs((maxKw % stepKw)) > 0.1) {
+        const yTop = mapY(maxW);
+        ctx.strokeStyle = "rgba(148,163,184,0.08)";
+        ctx.beginPath(); ctx.moveTo(padL, yTop); ctx.lineTo(W - padR, yTop); ctx.stroke();
+        ctx.fillStyle = "#64748b";
+        ctx.fillText(`${Number.isInteger(maxKw) ? maxKw : maxKw.toFixed(1)}kW`, padL - 5, yTop + 1);
+      }
+      ctx.textBaseline = "alphabetic";
+
+      // Fixed 00:00..24:00 vertical grid lines
+      ctx.strokeStyle = "rgba(148,163,184,0.10)";
+      for (let i = 0; i <= 4; i++) {
+        const x = padL + (cw / 4) * i;
+        ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ch); ctx.stroke();
+      }
+
+      if (pts.length >= 2) {
+        const pvXY = pts.map(p => [mapX(p.m), mapY(p.pv || 0)]);
+        const ldXY = pts.map(p => [mapX(p.m), mapY(p.load || 0)]);
+        const socXY = pts.map(p => [mapX(p.m), padT + ch - ((p.soc || 0) / 100) * ch]);
+
+        const pvGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+        pvGrad.addColorStop(0, "rgba(245, 158, 11, 0.55)");
+        pvGrad.addColorStop(1, "rgba(245, 158, 11, 0.02)");
+        drawSmoothSpline(ctx, pvXY, padT + ch);
+        ctx.fillStyle = pvGrad;
+        ctx.fill();
+
+        drawSmoothSpline(ctx, pvXY);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+
+        const ldGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+        ldGrad.addColorStop(0, "rgba(56, 189, 248, 0.35)");
+        ldGrad.addColorStop(1, "rgba(56, 189, 248, 0.01)");
+        drawSmoothSpline(ctx, ldXY, padT + ch);
+        ctx.fillStyle = ldGrad;
+        ctx.fill();
+
+        drawSmoothSpline(ctx, ldXY);
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.setLineDash([4, 3]);
+        drawSmoothSpline(ctx, socXY);
+        ctx.strokeStyle = "#34d399";
+        ctx.lineWidth = 1.7;
+        ctx.stroke();
+        ctx.restore();
+      } else if (pts.length === 1) {
+        const p = pts[0], x0 = mapX(p.m);
+        ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(x0, mapY(p.pv || 0), 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(x0, mapY(p.load || 0), 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#34d399"; ctx.beginPath(); ctx.arc(x0, padT + ch - ((p.soc || 0) / 100) * ch, 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // Fixed 00:00 -> 24:00 X-axis labels
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "600 10px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      [0, 360, 720, 1080, 1440].forEach((m) => {
+        const hh = String(Math.floor(m / 60)).padStart(2, "0");
+        ctx.fillText(`${hh}:00`, mapX(m), H - 5);
+      });
+    }
+
+    async function loadChartData() {
+      if (gDemoMode) { drawEnergyChart(gCurrentView === "view-history" ? "fullChart" : "miniChart", gCurrentView === "view-history"); return; }
+      try {
+        const r = await fetch("/api/chart");
+        const j = await r.json();
+        gChartPts = Array.isArray(j.points) ? j.points : [];
+      } catch { }
+      drawEnergyChart("miniChart", false);
+      if (gCurrentView === "view-history") drawEnergyChart("fullChart", true);
+    }
+
+    // API Actions
+    async function pollServer() {
+      const dot = document.getElementById("brandDot");
+      const state = document.getElementById("brandState");
+      if (gDemoMode) {
+        const sim = getDemoSimState();
+        const cur = sim.cur;
+        const hh = String(Math.floor(sim.hour)).padStart(2, "0");
+        const mm = String(Math.floor((sim.hour % 1) * 60)).padStart(2, "0");
+        dot.classList.add("online"); state.innerText = `Demo ${hh}:${mm}`; state.className = "brand-state online";
+        const demoTel = {
+          pv_power_w: cur.pv, pv1_power_w: Math.round(cur.pv * 0.54), pv2_power_w: cur.pv - Math.round(cur.pv * 0.54), pv1_volts: cur.pv > 0 ? 382 : 0, pv2_volts: cur.pv > 0 ? 374 : 0,
+          pv_today_kwh: Number((sim.hour * 1.1).toFixed(1)), pv_total_kwh: 4280, battery_power_w: cur.bat, battery_soc: cur.soc, battery_soh: 99,
+          battery_volts: Number((51.2 + cur.soc * 0.025).toFixed(1)), battery_current: Number((cur.bat / 53.0).toFixed(1)), battery_temp_c: 26.4, bat_max_chg_a: 40, bat_norm_chg_a: 40,
+          grid_power_w: cur.grid, grid_volts: 235, grid_l1_power_w: cur.grid, grid_hz: 50.0,
+          grid_buy_today_kwh: 0.4, grid_sell_today_kwh: 6.2, load_power_w: cur.load, load_today_kwh: Number((sim.hour * 0.65).toFixed(1)),
+          load_peak_today_kw: 4.1, load_avg_hourly_kw: 0.9, load_source_str: cur.pv > cur.load ? "Solar" : "Baterie",
+          inverter_temp_c: 41.2, inv_phases: 1, inverter_sn: "2209123456", inverter_rated_w: 6000, logger_sn: 1234567890, logger_mac: "AABBCCDDEEFF", cpu_pct: 18, cpu_mhz: gEcoActive ? 160 : 240,
+          ram_pct: 42, ram_used_kb: 138, ram_total_kb: 328, psram_pct: 4, storage_pct: 36,
+          storage_used_kb: 1106, storage_total_kb: 3072, esp_temp_c: 39.4, esp_temp_ok: true,
+          wifi_connected: true, wifi_rssi: -52, wifi_eco: gEcoActive, wifi_tx_dbm: gEcoActive ? 9 : 20, logger_connected: true
+        };
+        updateWifiBars(true, -52, gEcoActive, demoTel.wifi_tx_dbm, demoTel.cpu_mhz);
+        updateHeaderMetrics(demoTel);
+        applyTelemetry(demoTel);
+        drawEnergyChart("miniChart", false);
+        if (gCurrentView === "view-history") drawEnergyChart("fullChart", true);
+        return;
+      }
+      if (gAiBusy) return;
+      try {
+        const res = await fetch("/api/telemetry", { signal: AbortSignal.timeout ? AbortSignal.timeout(3500) : undefined });
+        const json = await res.json();
+        gPollFails = 0;
+        gPinRequired = !!json.pin_required;
+        gPinLockedSec = Number(json.pin_locked_sec || 0);
+        const d = json.data || {};
+        updateWifiBars(d.wifi_connected !== false, d.wifi_rssi || 0, !!d.wifi_eco, d.wifi_tx_dbm || 20, d.cpu_mhz || 240);
+        updateHeaderMetrics(d);
+        const ok = !!(json.online && d.logger_connected !== false);
+        dot.classList.toggle("online", ok);
+        state.innerText = ok ? "Online" : "Offline";
+        state.className = "brand-state" + (ok ? " online" : "");
+        applyTelemetry(d);
+      } catch {
+        gPollFails++;
+        if (gPollFails >= 4) {
+          dot.classList.remove("online");
+          state.innerText = "Offline";
+          state.className = "brand-state";
+          updateWifiBars(false, 0);
+          updateHeaderMetrics(null);
+        }
+      }
+    }
+
+    async function toggleQuickEco() {
+      const nextEco = !gEcoActive;
+      if (gDemoMode) { gEcoActive = nextEco; pollServer(); return; }
+      const pin = await ensurePin();
+      if (pin === null) return;
+      try {
+        const res = await fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Pin": pin },
+          body: JSON.stringify({ wifi_eco_mode: nextEco }),
+        });
+        if (res.status === 401) { localStorage.removeItem("deye_local_pin"); return; }
+        if (res.ok) {
+          gEcoActive = nextEco;
+          chooseEcoSetting(nextEco);
+          pollServer();
+        }
+      } catch { }
+    }
+
+    let gHistYear = new Date().getFullYear();
+    function initHistorySelectors() {
+      const now = new Date();
+      const iso = now.toISOString().slice(0, 10);
+      document.getElementById("histDateInp").value = iso;
+      gHistYear = now.getFullYear();
+      document.getElementById("histYearInp").value = String(gHistYear);
+      document.getElementById("histMonthYrVal").innerText = String(gHistYear);
+      const months = ["Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"];
+      const mSel = document.getElementById("histMonthSel");
+      mSel.innerHTML = "";
+      months.forEach((name, idx) => {
+        const opt = document.createElement("option");
+        opt.value = String(idx + 1).padStart(2, "0");
+        opt.textContent = name;
+        if (idx === now.getMonth()) opt.selected = true;
+        mSel.appendChild(opt);
+      });
+    }
+    initHistorySelectors();
+
+    function stepHistYear(delta) {
+      gHistYear = Math.max(2000, Math.min(2099, gHistYear + delta));
+      document.getElementById("histYearInp").value = String(gHistYear);
+      document.getElementById("histMonthYrVal").innerText = String(gHistYear);
+      loadHistoryData();
+    }
+
+    function syncHistYearFromInp() {
+      const v = parseInt(document.getElementById("histYearInp").value, 10);
+      if (Number.isFinite(v) && v >= 2000 && v <= 2099) gHistYear = v;
+      document.getElementById("histYearInp").value = String(gHistYear);
+      document.getElementById("histMonthYrVal").innerText = String(gHistYear);
+      loadHistoryData();
+    }
+
+    function setHistPeriod(p) {
+      gHistPeriod = p;
+      ["day", "month", "year", "total"].forEach(k => document.getElementById("pBtn-" + k).setAttribute("aria-pressed", k === p ? "true" : "false"));
+      document.getElementById("histDateInp").style.display = (p === "day") ? "" : "none";
+      document.getElementById("histMonthWrap").style.display = (p === "month") ? "flex" : "none";
+      document.getElementById("histYearWrap").style.display = (p === "year") ? "flex" : "none";
+      document.getElementById("histTotalLbl").style.display = (p === "total") ? "" : "none";
+      loadHistoryData();
+    }
+
+    async function loadHistoryData() {
+      if (gDemoMode) {
+        const mul = gHistPeriod === "total" ? 410 : (gHistPeriod === "year" ? 245 : (gHistPeriod === "month" ? 22 : 1));
+        document.getElementById("hPv").innerText = `${(18.6 * mul).toFixed(1)} kWh`;
+        document.getElementById("hLoad").innerText = `${(10.9 * mul).toFixed(1)} kWh`;
+        document.getElementById("hBuy").innerText = `${(1.8 * mul).toFixed(1)} kWh`;
+        document.getElementById("hSell").innerText = `${(7.4 * mul).toFixed(1)} kWh`;
+        document.getElementById("hChg").innerText = `${(8.2 * mul).toFixed(1)} kWh`;
+        document.getElementById("hDis").innerText = `${(5.6 * mul).toFixed(1)} kWh`;
+        return;
+      }
+      const nowIso = new Date().toISOString().slice(0, 10);
+      const mVal = document.getElementById("histMonthSel").value || nowIso.slice(5, 7);
+      const dParam = gHistPeriod === "month"
+        ? `${gHistYear}-${mVal}`
+        : (gHistPeriod === "year"
+          ? String(gHistYear)
+          : (document.getElementById("histDateInp").value || nowIso));
+      try {
+        const r = await fetch(`/api/history?period=${encodeURIComponent(gHistPeriod)}&date=${encodeURIComponent(dParam)}`);
+        const h = await r.json();
+        document.getElementById("hPv").innerText = `${Number(h.pv_kwh || 0).toFixed(1)} kWh`;
+        document.getElementById("hLoad").innerText = `${Number(h.load_kwh || 0).toFixed(1)} kWh`;
+        document.getElementById("hBuy").innerText = `${Number(h.grid_buy_kwh || 0).toFixed(1)} kWh`;
+        document.getElementById("hSell").innerText = `${Number(h.grid_sell_kwh || 0).toFixed(1)} kWh`;
+        document.getElementById("hChg").innerText = `${Number(h.bat_chg_kwh || 0).toFixed(1)} kWh`;
+        document.getElementById("hDis").innerText = `${Number(h.bat_dis_kwh || 0).toFixed(1)} kWh`;
+      } catch { }
+    }
+
+    async function triggerFastChartTest() {
+      await fetch("/api/chart/fasttest", { method: "POST" });
+      loadChartData();
+    }
+
+    async function clearSpiffsHistory() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const r = await fetch("/api/history/clear", { method: "POST", headers: { "X-Admin-Pin": pin } });
+      if (r.ok) { gChartPts = []; gYesterdayLoadKwh = 0; loadHistoryData(); drawEnergyChart("fullChart", true); pollServer(); }
+    }
+
+    async function saveBatteryCfg() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      gBatSyncLock = true;
+      renderScheduleBar();
+      const toM = (s) => { const [h, m] = (s || "06:00").split(":").map(Number); return (h * 60) + (m || 0); };
+      const payload = {
+        bat_sched_enabled: document.getElementById("batSchedSwitch").checked,
+        bat_pause_start: toM(document.getElementById("batStartInp").value),
+        bat_pause_end: toM(document.getElementById("batEndInp").value),
+        tg_bms_alert: document.getElementById("tgBmsSwitch").checked,
+        tg_grid_alert: document.getElementById("tgGridSwitch").checked,
+        tg_bat_freeze_alert: document.getElementById("tgFreezeSwitch").checked,
+        bat_freeze_temp: parseInt(document.getElementById("batFreezeInp").value, 10) || 8,
+      };
+      const note = document.getElementById(gCurrentView === "view-grid" ? "gridCfgNote" : "batCfgNote");
+      try {
+        const r = await fetch("/api/battery/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Pin": pin },
+          body: JSON.stringify(payload),
+        });
+        if (r.status === 401) localStorage.removeItem("deye_local_pin");
+        note.style.color = r.ok ? "#34d399" : "#f87171";
+        note.innerText = r.ok ? "Preferin\u021Be & alerte salvate!" : "Acces refuzat sau eroare.";
+      } catch {
+        note.style.color = "#f87171"; note.innerText = "Eroare comunicare ESP32-S3.";
+      } finally {
+        setTimeout(() => { gBatSyncLock = false; }, 1200);
+      }
+    }
+
+    function chooseEcoSetting(eco) {
+      gEcoSetting = !!eco;
+      document.getElementById("btnModeNorm").setAttribute("aria-pressed", !gEcoSetting ? "true" : "false");
+      document.getElementById("btnModeEco").setAttribute("aria-pressed", gEcoSetting ? "true" : "false");
+      document.getElementById("ecoDesc").innerText = gEcoSetting
+        ? "Mod Eco: Wi-Fi Modem Sleep + TX adaptiv (8\u201320 dBm) + CPU dinamic 80\u2013160 MHz."
+        : "Normal: putere maxim\u0103 20 dBm \u0219i CPU 240 MHz f\u0103r\u0103 Modem Sleep.";
+    }
+
+    async function rebootEsp32() {
+      if (gDemoMode) { document.getElementById("cfgNote").innerText = "Restart indisponibil in Mod Demo."; return; }
+      const pin = await ensurePin();
+      if (pin === null) return;
+      if (!confirm("Reporne\u0219ti modulul ESP32-S3?")) return;
+      const note = document.getElementById("cfgNote");
+      note.style.color = "#38bdf8"; note.innerText = "Se reporne\u0219te ESP32-S3...";
+      try {
+        const r = await fetch("/api/reboot", { method: "POST", headers: { "X-Admin-Pin": pin } });
+        note.style.color = r.ok ? "#34d399" : "#f87171";
+        note.innerText = r.ok ? "ESP32-S3 reporne\u0219te (~5s)..." : "Acces refuzat.";
+      } catch {
+        note.style.color = "#f87171"; note.innerText = "Eroare comunicare cu ESP32-S3.";
+      }
+    }
+
+    async function unlockAndLoadSettings() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const note = document.getElementById("selectedLoggerTxt");
+      try {
+        const r = await fetch("/api/config", { headers: { "X-Admin-Pin": pin } });
+        const c = await r.json();
+        if (!r.ok) {
+          if (r.status === 401) { localStorage.removeItem("deye_local_pin"); gSettingsUnlocked = false; gSessionPin = ""; }
+          note.innerText = c.error || "PIN incorect.";
+          return;
+        }
+        document.getElementById("cfg-mac").value = c.logger_mac || "";
+        document.getElementById("cfg-ip").value = c.logger_ip || "";
+        document.getElementById("cfg-sn").value = c.logger_sn || "";
+        document.getElementById("cfg-interval").value = Math.max(5, Math.min(60, Math.round((c.send_interval_ms || 5000) / 1000)));
+        chooseEcoSetting(!!c.wifi_eco_mode);
+        document.getElementById("cfg-tg-tok").value = c.tg_bot_token || "";
+        document.getElementById("cfg-tg-chat").value = c.tg_chat_id || "";
+        document.getElementById("cfg-gemini-key").value = "";
+        const gHint = document.getElementById("gemini-key-hint");
+        if (gHint) {
+          gHint.style.color = c.gemini_key_set ? "#34d399" : "#fbbf24";
+          gHint.innerText = c.gemini_key_set
+            ? `Cheie configurata (${c.gemini_api_key_masked || "AIza\u2022\u2022\u2022\u2022"}) \u2014 lasa gol pentru a o pastra.`
+            : "Cheie Gemini neconfigurata \u2014 introdu cheia din Google AI Studio.";
+        }
+        setGeminiModelUi(c.gemini_model || "gemini-flash-lite-latest");
+        document.getElementById("cfg-w-city").value = c.weather_city || "";
+        document.getElementById("cfg-w-lat").value = c.weather_lat || 0;
+        document.getElementById("cfg-w-lon").value = c.weather_lon || 0;
+        updateWeatherLocHint(c.weather_city, c.weather_lat, c.weather_lon);
+        document.getElementById("fwBadge").innerText = c.fw_version || "v1.0.0";
+        note.innerText = c.logger_sn ? `Logger: ${c.logger_ip || "-"} | SN: ${c.logger_sn} | MAC: ${c.logger_mac || "-"}` : "Niciun logger configurat.";
+      } catch {
+        note.innerText = "Eroare comunicare cu ESP32-S3.";
+      }
+    }
+
+    function setGeminiModelUi(val) {
+      const sel = document.getElementById("cfg-gemini-model-sel");
+      const inp = document.getElementById("cfg-gemini-model");
+      if (!sel || !inp) return;
+      const v = (val || "gemini-flash-lite-latest").trim();
+      const opts = Array.from(sel.options).map(o => o.value);
+      if (opts.includes(v) && v !== "__custom__") {
+        sel.value = v;
+        inp.value = v;
+        inp.style.display = "none";
+      } else {
+        sel.value = "__custom__";
+        inp.value = v;
+        inp.style.display = "";
+      }
+    }
+
+    function onGeminiModelSelChange() {
+      const sel = document.getElementById("cfg-gemini-model-sel");
+      const inp = document.getElementById("cfg-gemini-model");
+      if (!sel || !inp) return;
+      if (sel.value === "__custom__") {
+        inp.style.display = "";
+        if (["gemini-flash-lite-latest", "gemini-3.8-flash", "gemini-4-hydrogen"].includes(inp.value)) {
+          inp.value = "";
+        }
+        inp.focus();
+      } else {
+        inp.value = sel.value;
+        inp.style.display = "none";
+      }
+    }
+
+    function updateWeatherLocHint(city, lat, lon) {
+      const h = document.getElementById("weather-loc-hint");
+      if (!h) return;
+      const la = Number(lat || 0), lo = Number(lon || 0);
+      if (la !== 0 || lo !== 0) {
+        h.style.color = "#34d399";
+        h.innerText = `\u2705 ${city || "Loca\u021Bie"} (${la.toFixed(2)}\u00B0N, ${lo.toFixed(2)}\u00B0E) \u2014 apas\u0103 Salveaz\u0103.`;
+      } else {
+        h.style.color = "#94a3b8";
+        h.innerText = "Nicio localitate configurat\u0103.";
+      }
+    }
+
+    async function searchWeatherCity() {
+      const city = (document.getElementById("cfg-w-city").value || "").trim();
+      const h = document.getElementById("weather-loc-hint");
+      if (!city) { h.style.color = "#fbbf24"; h.innerText = "Introdu mai \u00EEnt\u00E2i numele localit\u0103\u021Bii."; return; }
+      h.style.color = "#38bdf8"; h.innerText = "Se caut\u0103 coordonatele...";
+      try {
+        const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ro`);
+        const j = await r.json();
+        if (j.results && j.results[0]) {
+          const res = j.results[0];
+          const label = res.admin1 ? `${res.name}, ${res.country_code || ""}` : res.name;
+          document.getElementById("cfg-w-city").value = label;
+          document.getElementById("cfg-w-lat").value = res.latitude;
+          document.getElementById("cfg-w-lon").value = res.longitude;
+          updateWeatherLocHint(label, res.latitude, res.longitude);
+        } else {
+          h.style.color = "#f87171"; h.innerText = "Localitate neg\u0103sit\u0103. \u00CEncerc\u0103 alt nume.";
+        }
+      } catch {
+        h.style.color = "#f87171"; h.innerText = "Eroare la c\u0103utarea Open-Meteo.";
+      }
+    }
+
+    async function detectWeatherLocation() {
+      const h = document.getElementById("weather-loc-hint");
+      h.style.color = "#38bdf8"; h.innerText = "Se detecteaz\u0103 loca\u021Bia...";
+      const tryIpGeo = async () => {
+        try {
+          const r = await fetch("https://get.geojs.io/v1/ip/geo.json");
+          const j = await r.json();
+          if (j && j.latitude && j.longitude) {
+            const label = [j.city, j.country_code].filter(Boolean).join(", ") || "Loca\u021Bie IP";
+            document.getElementById("cfg-w-city").value = label;
+            document.getElementById("cfg-w-lat").value = Number(j.latitude);
+            document.getElementById("cfg-w-lon").value = Number(j.longitude);
+            updateWeatherLocHint(label, j.latitude, j.longitude);
+            return true;
+          }
+        } catch {}
+        return false;
+      };
+      if (navigator.geolocation && window.isSecureContext) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const la = pos.coords.latitude, lo = pos.coords.longitude;
+            let label = `${la.toFixed(2)}, ${lo.toFixed(2)}`;
+            try {
+              const gr = await fetch("https://get.geojs.io/v1/ip/geo.json");
+              const gj = await gr.json();
+              if (gj && gj.city) label = [gj.city, gj.country_code].filter(Boolean).join(", ");
+            } catch {}
+            document.getElementById("cfg-w-city").value = label;
+            document.getElementById("cfg-w-lat").value = la;
+            document.getElementById("cfg-w-lon").value = lo;
+            updateWeatherLocHint(label, la, lo);
+          },
+          async () => { if (!(await tryIpGeo())) { h.style.color = "#f87171"; h.innerText = "Nu s-a putut detecta automat. Scrie ora\u0219ul."; } },
+          { timeout: 5000 }
+        );
+      } else {
+        if (!(await tryIpGeo())) { h.style.color = "#f87171"; h.innerText = "GPS indisponibil pe HTTP. Scrie ora\u0219ul \u0219i apas\u0103 Caut\u0103."; }
+      }
+    }
+
+    async function saveSettings() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const note = document.getElementById("cfgNote");
+      const sec = Math.max(5, Math.min(60, parseInt(document.getElementById("cfg-interval").value, 10) || 5));
+      const gKeyVal = document.getElementById("cfg-gemini-key").value.trim();
+      const payload = {
+        logger_mac: document.getElementById("cfg-mac").value.trim(),
+        logger_ip: document.getElementById("cfg-ip").value.trim(),
+        logger_sn: parseInt(document.getElementById("cfg-sn").value, 10) || 0,
+        send_interval_ms: sec * 1000,
+        wifi_eco_mode: gEcoSetting,
+        tg_bot_token: document.getElementById("cfg-tg-tok").value.trim(),
+        tg_chat_id: document.getElementById("cfg-tg-chat").value.trim(),
+        gemini_api_key: gKeyVal,
+        gemini_model: document.getElementById("cfg-gemini-model").value.trim() || "gemini-flash-lite-latest",
+        weather_city: document.getElementById("cfg-w-city").value.trim(),
+        weather_lat: Number(document.getElementById("cfg-w-lat").value || 0),
+        weather_lon: Number(document.getElementById("cfg-w-lon").value || 0),
+      };
+      note.innerText = "Se salveaz\u0103...";
+      const r = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Admin-Pin": pin },
+        body: JSON.stringify(payload),
+      });
+      note.style.color = r.ok ? "#34d399" : "#f87171";
+      note.innerText = r.ok ? "Set\u0103ri salvate \u2192 aplicate instant!" : "Eroare salvare NVS.";
+      if (r.ok) {
+        if (gKeyVal) {
+          document.getElementById("cfg-gemini-key").value = "";
+          const gHint = document.getElementById("gemini-key-hint");
+          const mask = gKeyVal.length >= 8 ? (gKeyVal.slice(0, 4) + "\u2022\u2022\u2022\u2022" + gKeyVal.slice(-4)) : "\u2022\u2022\u2022\u2022";
+          if (gHint) {
+            gHint.style.color = "#34d399";
+            gHint.innerText = `Cheie configurata (${mask}) \u2014 lasa gol pentru a o pastra.`;
+          }
+        }
+        pollServer();
+      }
+    }
+
+    // AI Assistant Dialog & Retry Engine
+    let gLastAiAction = null; // { type: 'ask' | 'audit', question: string }
+    let gAiBusy = false;
+
+    const ROBOT_AVATAR_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="2" x2="12" y2="5"/><rect x="4" y="5" width="16" height="14" rx="4"/><circle cx="9" cy="11" r="1.3" fill="currentColor" stroke="none"/><circle cx="15" cy="11" r="1.3" fill="currentColor" stroke="none"/><path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9"/></svg>`;
+
+    function appendAiUserBubble(text) {
+      const box = document.getElementById("aiChatBox");
+      if (!box) return;
+      const div = document.createElement("div");
+      div.className = "ai-msg-user";
+      div.innerText = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function appendAiBotBubble(text, isError = false) {
+      const box = document.getElementById("aiChatBox");
+      if (!box) return null;
+      const row = document.createElement("div");
+      row.className = "ai-msg-bot-row";
+      const av = document.createElement("div");
+      av.className = "ai-bot-avatar";
+      av.innerHTML = ROBOT_AVATAR_SVG;
+      const msg = document.createElement("div");
+      msg.className = isError ? "ai-msg-bot err" : "ai-msg-bot";
+      msg.innerText = text;
+      if (isError && gLastAiAction) {
+        const br = document.createElement("div");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ai-retry-btn";
+        btn.innerHTML = "&#x1F504; Retrimite";
+        btn.onclick = () => retryLastAiAction();
+        br.appendChild(btn);
+        msg.appendChild(br);
+      }
+      row.appendChild(av);
+      row.appendChild(msg);
+      box.appendChild(row);
+      box.scrollTop = box.scrollHeight;
+      return row;
+    }
+
+    function getAiBatContextStr() {
+      const aut = (document.getElementById("autonomyVal") || {}).innerText || "--";
+      return `Capacitate baterie ${gBatCapKwh} kWh, rezerva autonomie ${gBatMinSoc}%, autonomie estimata ${aut}`;
+    }
+
+    let gAiAbortCtrl = null;
+    const AI_SEND_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>';
+    const AI_STOP_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2.5" /></svg>';
+
+    function setAiBusy(busy) {
+      gAiBusy = !!busy;
+      const btn = document.getElementById("aiSendBtn");
+      if (!btn) return;
+      btn.classList.toggle("stop", gAiBusy);
+      btn.setAttribute("aria-label", gAiBusy ? "Opre\u0219te" : "Trimite");
+      btn.title = gAiBusy ? "Opre\u0219te r\u0103spunsul" : "Trimite";
+      btn.innerHTML = gAiBusy ? AI_STOP_SVG : AI_SEND_SVG;
+    }
+
+    function stopAiRequest() {
+      if (gAiAbortCtrl) {
+        try { gAiAbortCtrl.abort(); } catch {}
+      }
+    }
+
+    async function executeAiQuestion(question, skipUserBubble = false) {
+      if (gAiBusy || !question) return;
+      setAiBusy(true);
+      gAiAbortCtrl = new AbortController();
+      gLastAiAction = { type: "ask", question };
+      if (!skipUserBubble) appendAiUserBubble(question);
+      const waitRow = appendAiBotBubble("G\u00E2ndesc...");
+      try {
+        const r = await fetch("/api/ai/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, bat_info: getAiBatContextStr() }),
+          signal: gAiAbortCtrl.signal,
+        });
+        const j = await r.json();
+        if (waitRow) waitRow.remove();
+        if (r.ok && j.ok) {
+          appendAiBotBubble(j.answer || "R\u0103spuns primit.");
+        } else {
+          appendAiBotBubble(j.error || "Eroare comunicare cu API-ul Gemini.", true);
+        }
+      } catch (err) {
+        if (waitRow) waitRow.remove();
+        if (err && err.name === "AbortError") {
+          appendAiBotBubble("R\u0103spuns oprit.", false);
+        } else {
+          appendAiBotBubble("Conexiunea cu ESP32-S3 a expirat sau a e\u0219uat.", true);
+        }
+      } finally {
+        gAiAbortCtrl = null;
+        setAiBusy(false);
+      }
+    }
+
+    function askAiPreset(q) {
+      executeAiQuestion(q, false);
+    }
+
+    function sendAiCustomPrompt() {
+      if (gAiBusy) {
+        stopAiRequest();
+        return;
+      }
+      const inp = document.getElementById("aiPromptInp");
+      const q = (inp.value || "").trim();
+      if (!q) return;
+      inp.value = "";
+      executeAiQuestion(q, false);
+    }
+
+    async function runAiAuditTelegram(skipUserBubble = false) {
+      if (gAiBusy) return;
+      setAiBusy(true);
+      gAiAbortCtrl = new AbortController();
+      gLastAiAction = { type: "audit", question: "Genereaz\u0103 \u0219i trimite raportul de Audit pe Telegram" };
+      if (!skipUserBubble) appendAiUserBubble("\uD83D\uDCCB Trimite Audit pe Telegram");
+      const waitRow = appendAiBotBubble("Generez raportul complet de Audit \u0219i \u00EEl trimit pe Telegram...");
+      try {
+        const r = await fetch("/api/ai/audit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bat_info: getAiBatContextStr() }),
+          signal: gAiAbortCtrl.signal,
+        });
+        const j = await r.json();
+        if (waitRow) waitRow.remove();
+        if (r.ok && j.ok) {
+          const tgNote = j.tg_sent
+            ? "\n\n\u2705 Raportul a fost trimis \u0219i pe Telegram!"
+            : "\n\n\u26A0\uFE0F Audit generat (pentru trimitere pe Telegram, verific\u0103 Token & Chat ID \u00EEn Set\u0103ri).";
+          appendAiBotBubble((j.answer || "") + tgNote);
+        } else {
+          appendAiBotBubble(j.error || "Eroare la generarea Auditului AI.", true);
+        }
+      } catch (err) {
+        if (waitRow) waitRow.remove();
+        if (err && err.name === "AbortError") {
+          appendAiBotBubble("Audit oprit.", false);
+        } else {
+          appendAiBotBubble("Conexiunea cu ESP32-S3 a expirat sau a e\u0219uat.", true);
+        }
+      } finally {
+        gAiAbortCtrl = null;
+        setAiBusy(false);
+      }
+    }
+
+    function retryLastAiAction() {
+      if (!gLastAiAction || gAiBusy) return;
+      if (gLastAiAction.type === "audit") {
+        runAiAuditTelegram(true);
+      } else {
+        executeAiQuestion(gLastAiAction.question, true);
+      }
+    }
+
+    async function scanInverters() {
+      let activePin = await ensurePin();
+      if (activePin === null) return;
+      const box = document.getElementById("scanBox");
+      box.classList.add("open");
+      box.innerHTML = "Se scaneaz\u0103 re\u021Baua LAN (UDP + TCP 8899)...";
+      let s = await fetch("/api/logger/scan", { headers: { "X-Admin-Pin": activePin } });
+      if (s.status === 401) {
+        localStorage.removeItem("deye_local_pin"); gSettingsUnlocked = false; gSessionPin = "";
+        activePin = await ensurePin();
+        if (activePin === null) { box.innerText = "Autorizare anulat\u0103."; return; }
+        s = await fetch("/api/logger/scan", { headers: { "X-Admin-Pin": activePin } });
+      }
+      if (!s.ok) { box.innerText = "Eroare autorizare / scanare."; return; }
+      let data = await s.json();
+      for (let i = 0; i < 60 && (!data.done || data.scanning); i++) {
+        await new Promise(r => setTimeout(r, 600));
+        const st = await fetch("/api/logger/scan/status", { headers: { "X-Admin-Pin": activePin } });
+        if (!st.ok) { box.innerText = "Eroare autorizare / scanare."; return; }
+        data = await st.json();
+      }
+      if (!data.loggers || !data.loggers.length) {
+        box.innerText = "Niciun logger Solarman g\u0103sit pe re\u021Bea.";
+        return;
+      }
+      box.innerHTML = "";
+      if (data.loggers.length > 1) {
+        const hdr = document.createElement("div");
+        hdr.style.cssText = "font-size:11px;color:#38bdf8;margin-bottom:6px;font-weight:700;";
+        hdr.innerText = `G\u0103site ${data.loggers.length} loggere Solarman — selecteaz\u0103 invertorul dorit:`;
+        box.appendChild(hdr);
+      }
+      const curSn = String(document.getElementById("cfg-sn").value || "");
+      const curIp = String(document.getElementById("cfg-ip").value || "");
+      data.loggers.forEach(l => {
+        const div = document.createElement("div");
+        div.className = "scan-item";
+        const isSel = (curSn && String(l.sn) === curSn) || (curIp && l.ip === curIp);
+        if (isSel) div.style.borderColor = "#10b981";
+        const tag = isSel ? ` <span style="color:#34d399;font-size:11px;font-weight:700;">&#9679; ACTIV</span>` : "";
+        div.innerHTML = `<strong>${l.model || "Deye Logger"}</strong> &bull; ${l.ip}${tag} <br><small>SN: ${l.sn} | MAC: ${l.mac}</small>`;
+        div.onclick = () => {
+          document.getElementById("cfg-mac").value = l.mac || "";
+          document.getElementById("cfg-ip").value = l.ip || "";
+          document.getElementById("cfg-sn").value = l.sn || "";
+          document.getElementById("selectedLoggerTxt").innerText = `Selectat: ${l.ip} | SN: ${l.sn}`;
+          saveSettings();
+        };
+        box.appendChild(div);
+      });
+    }
+
+    async function testTelegram() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const note = document.getElementById("cfgNote");
+      const r = await fetch("/api/telegram/test", { method: "POST", headers: { "X-Admin-Pin": pin } });
+      const j = await r.json();
+      note.style.color = j.ok ? "#34d399" : "#f87171";
+      note.innerText = j.ok ? "Mesaj Telegram trimis!" : (j.error || "Eroare Telegram.");
+    }
+
+    let gPreDemoEco = false;
+    function toggleDemoMode() {
+      gDemoMode = !gDemoMode;
+      if (gDemoMode) {
+        gPreDemoEco = gEcoActive;
+        gDemoStartMs = Date.now();
+      } else {
+        gEcoActive = gPreDemoEco;
+      }
+      document.getElementById("demoTag").classList.toggle("on", gDemoMode);
+      document.getElementById("btnToggleDemo").innerText = `Mod Demo: ${gDemoMode ? "ON" : "OFF"}`;
+      pollServer();
+      loadChartData();
+      loadHistoryData();
+    }
+
+    async function uploadLocalOta() {
+      const inp = document.getElementById("otaFileInp");
+      const note = document.getElementById("otaNote");
+      const pWrap = document.getElementById("otaProgWrap");
+      const pBar = document.getElementById("otaProgBar");
+      if (!inp.files || !inp.files[0]) { note.innerText = "Alege mai \u00EEnt\u00E2i un fi\u0219ier .bin!"; return; }
+      const pin = await ensurePin();
+      if (pin === null) return;
+      if (pWrap && pBar) { pWrap.style.display = "block"; pBar.style.width = "2%"; }
+      note.style.color = "#38bdf8";
+      note.innerText = "Se \u00EEncarc\u0103 firmware OTA (0%)...";
+      const file = inp.files[0];
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/ota", true);
+      xhr.setRequestHeader("X-Admin-Pin", pin);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable) return;
+        const rawPct = Math.round((e.loaded / e.total) * 100);
+        const pct = Math.max(2, Math.min(99, rawPct));
+        if (pBar) pBar.style.width = `${pct}%`;
+        note.innerText = rawPct >= 100
+          ? "Se verific\u0103 \u0219i se finalizeaz\u0103 scrierea (99%)..."
+          : `Se \u00EEncarc\u0103 firmware OTA (${pct}%)...`;
+      };
+      xhr.onload = () => {
+        let j = {};
+        try { j = JSON.parse(xhr.responseText || "{}"); } catch {}
+        if (xhr.status >= 200 && xhr.status < 300 && j.ok) {
+          if (pBar) pBar.style.width = "100%";
+          note.style.color = "#34d399";
+          note.innerText = "\u2705 Actualizare reu\u0219it\u0103! (100%) Revenire \u00EEn Dashboard \u00EEn 4s...";
+          setTimeout(() => {
+            window.location.replace("/?ota=" + Date.now() + "#view-live");
+          }, 4000);
+        } else {
+          note.style.color = "#f87171";
+          note.innerText = j.error || `Eroare OTA (HTTP ${xhr.status}).`;
+        }
+      };
+      xhr.onerror = () => {
+        note.style.color = "#f87171";
+        note.innerText = "Eroare de conexiune la \u00EEnc\u0103rcarea OTA.";
+      };
+      xhr.send(file);
+    }
+
+    async function checkGithubOta() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const note = document.getElementById("otaNote");
+      note.style.color = "#38bdf8"; note.innerText = "Verific GitHub Releases...";
+      const r = await fetch("/api/ota/check", { headers: { "X-Admin-Pin": pin } });
+      const j = await r.json();
+      if (!j.ok) { note.style.color = "#f87171"; note.innerText = j.error || "Eroare GitHub."; return; }
+      if (j.update_available) {
+        note.style.color = "#34d399";
+        note.innerText = `Disponibil\u0103 versiunea ${j.latest}! ${j.notes || ""}`;
+        document.getElementById("btnGhInstall").style.display = "block";
+      } else {
+        note.style.color = "#94a3b8";
+        note.innerText = `E\u0219ti la zi (${j.current}).`;
+        document.getElementById("btnGhInstall").style.display = "none";
+      }
+    }
+
+    async function startGithubOta() {
+      const pin = await ensurePin();
+      if (pin === null) return;
+      const note = document.getElementById("otaNote");
+      const pWrap = document.getElementById("otaProgWrap");
+      const pBar = document.getElementById("otaProgBar");
+      if (pWrap && pBar) { pWrap.style.display = "block"; pBar.style.width = "4%"; }
+      note.style.color = "#38bdf8";
+      note.innerText = "Se porne\u0219te actualizarea GitHub (0%)...";
+      await fetch("/api/ota/github", { method: "POST", headers: { "X-Admin-Pin": pin } });
+      let sawRunning = false;
+      const finishSuccess = () => {
+        if (pBar) pBar.style.width = "100%";
+        note.style.color = "#34d399";
+        note.innerText = "\u2705 Actualizare reu\u0219it\u0103! (100%)";
+        setTimeout(() => {
+          window.location.replace("/?ota=" + Date.now() + "#view-live");
+        }, 4000);
+      };
+      const timer = setInterval(async () => {
+        try {
+          const r = await fetch("/api/ota/status");
+          const j = await r.json();
+          if (j.state === "running") sawRunning = true;
+          if (j.state === "idle" && sawRunning) {
+            clearInterval(timer);
+            finishSuccess();
+            return;
+          }
+          const pct = Math.max(0, Math.min(100, Number(j.progress || 0)));
+          if (pBar) pBar.style.width = `${pct}%`;
+          note.innerText = `${j.message || j.state} (${pct}%)`;
+          if (j.state === "done") {
+            clearInterval(timer);
+            finishSuccess();
+          } else if (j.state === "error") {
+            clearInterval(timer);
+            note.style.color = "#f87171";
+          }
+        } catch {
+          if (sawRunning) {
+            if (pBar) pBar.style.width = "100%";
+            note.innerText = "ESP32-S3 reporne\u0219te...";
+          }
+        }
+      }, 450);
+    }
+
+    setInterval(pollServer, 2000);
+    setInterval(loadChartData, 20000);
+    window.addEventListener("resize", () => { drawEnergyChart("miniChart", false); if (gCurrentView === "view-history") drawEnergyChart("fullChart", true); });
+    drawEnergyChart("miniChart", false);
+    loadYesterdayLoad();
+    setInterval(loadYesterdayLoad, 1800000);
+    pollServer();
+    loadChartData();
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+
+</html>
