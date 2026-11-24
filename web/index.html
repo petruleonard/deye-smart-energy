@@ -3771,6 +3771,8 @@
       stopAcPolling();
       gAcPollTimer = setInterval(() => {
         if (gCurrentView !== "view-load" || document.hidden) return;
+        const ae = document.activeElement;
+        if (ae && (ae.id === "acDeviceSelect" || ae.id === "acBrand")) return;
         if (Date.now() - gAcLastCmdTs < 2500) return;
         loadAcStatus(true, true);
       }, 3000);
@@ -3866,14 +3868,20 @@
 
       const devs = Array.isArray(data.devices) ? data.devices : [];
       const sel = document.getElementById("acDeviceSelect");
-      sel.innerHTML = "";
-      devs.forEach(d => {
-        const opt = document.createElement("option");
-        opt.value = d.id;
-        opt.textContent = d.name;
-        if (d.id === data.selected_device_id) opt.selected = true;
-        sel.appendChild(opt);
-      });
+      const devKey = devs.map(d => d.id + ":" + d.name).join("|");
+      if (sel.dataset.devKey !== devKey) {
+        sel.dataset.devKey = devKey;
+        sel.innerHTML = "";
+        devs.forEach(d => {
+          const opt = document.createElement("option");
+          opt.value = d.id;
+          opt.textContent = d.name;
+          if (d.id === data.selected_device_id) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      } else if (data.selected_device_id && document.activeElement !== sel && sel.value !== data.selected_device_id) {
+        sel.value = data.selected_device_id;
+      }
 
       if (data.connected && data.state) {
         gAcState = Object.assign({ power: false, target_temp: 23, current_temp: null, mode: "cool", fan_speed: 0, fan_max: 7 }, data.state);
