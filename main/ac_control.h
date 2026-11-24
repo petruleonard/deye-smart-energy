@@ -38,6 +38,11 @@ bool ac_control_connect_tcl(const char *email, const char *password,
                             char *first_dev_id, size_t first_dev_id_sz,
                             char *err_buf, size_t err_sz);
 
+bool ac_control_connect_tuya(const char *region, const char *cid, const char *secret, const char *device_id,
+                             char *devices_json, size_t devices_json_sz,
+                             char *sel_dev_id, size_t sel_dev_id_sz,
+                             char *err_buf, size_t err_sz);
+
 bool ac_control_get_state(ac_state_t *out_state, char *err_buf, size_t err_sz);
 bool ac_control_send_cmd(const ac_cmd_t *cmd, ac_state_t *out_state, char *err_buf, size_t err_sz);
 

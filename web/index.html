@@ -3764,11 +3764,12 @@
     let gAcPollTimer = null;
     let gAcPollInFlight = false;
     let gAcLastCmdTs = 0;
+    let gAcSetupManual = false;
 
     function startAcPolling() {
       stopAcPolling();
       gAcPollTimer = setInterval(() => {
-        if (gCurrentView !== "view-load" || document.hidden) return;
+        if (gCurrentView !== "view-load" || document.hidden || gAcSetupManual) return;
         const ae = document.activeElement;
         if (ae && (ae.id === "acDeviceSelect" || ae.id === "acBrand")) return;
         if (Date.now() - gAcLastCmdTs < 2500) return;
@@ -3789,7 +3790,9 @@
 
     function toggleAcSetup() {
       const box = document.getElementById("acSetupBox");
-      box.style.display = box.style.display === "none" ? "block" : "none";
+      const show = box.style.display === "none";
+      gAcSetupManual = show;
+      box.style.display = show ? "block" : "none";
     }
 
     function renderAcFanControls() {
@@ -3852,16 +3855,18 @@
       const discBtn = document.getElementById("acDisconnectBtn");
       const msgEl = document.getElementById("acMsg");
 
-      if (data.brand) {
-        document.getElementById("acBrand").value = data.brand;
-        onAcBrandChange();
+      if (!gAcSetupManual) {
+        if (data.brand) {
+          document.getElementById("acBrand").value = data.brand;
+          onAcBrandChange();
+        }
+        if (data.tcl_email) document.getElementById("acTclEmail").value = data.tcl_email;
+        if (data.tcl_password_set) document.getElementById("acTclPass").placeholder = "Parol\u0103 salvat\u0103 (las\u0103 gol pentru a p\u0103stra)";
+        if (data.tuya_region) document.getElementById("acTuyaRegion").value = data.tuya_region;
+        if (data.tuya_client_id) document.getElementById("acTuyaClientId").value = data.tuya_client_id;
+        if (data.tuya_secret_set) document.getElementById("acTuyaSecret").placeholder = "Secret salvat (las\u0103 gol pentru a p\u0103stra)";
+        if (data.tuya_device_id) document.getElementById("acTuyaDeviceId").value = data.tuya_device_id;
       }
-      if (data.tcl_email) document.getElementById("acTclEmail").value = data.tcl_email;
-      if (data.tcl_password_set) document.getElementById("acTclPass").placeholder = "Parol\u0103 salvat\u0103 (las\u0103 gol pentru a p\u0103stra)";
-      if (data.tuya_region) document.getElementById("acTuyaRegion").value = data.tuya_region;
-      if (data.tuya_client_id) document.getElementById("acTuyaClientId").value = data.tuya_client_id;
-      if (data.tuya_secret_set) document.getElementById("acTuyaSecret").placeholder = "Secret salvat (las\u0103 gol pentru a p\u0103stra)";
-      if (data.tuya_device_id) document.getElementById("acTuyaDeviceId").value = data.tuya_device_id;
       discBtn.style.display = data.brand ? "inline-block" : "none";
 
       const devs = Array.isArray(data.devices) ? data.devices : [];
@@ -3886,7 +3891,7 @@
         badge.innerHTML = "&#9679; Conectat";
         badge.style.color = "#34d399";
         ctrlBox.style.display = "block";
-        setupBox.style.display = "none";
+        if (!gAcSetupManual) setupBox.style.display = "none";
         applyAcUiFromState();
       } else {
         badge.innerHTML = data.error ? "&#9679; Eroare" : "&#9679; Neconectat";
@@ -3941,7 +3946,7 @@
         const data = await res.json();
         if (data.ok) {
           msgEl.textContent = "Conectat cu succes!"; msgEl.style.color = "#34d399";
-          gAcLoaded = true; renderAcState(data);
+          gAcLoaded = true; gAcSetupManual = false; renderAcState(data);
         } else {
           msgEl.textContent = data.error || "Conectare e\u0219uat\u0103."; msgEl.style.color = "#f87171";
         }
@@ -3952,18 +3957,28 @@
 
     async function disconnectAc() {
       const msgEl = document.getElementById("acMsg");
+      const brand = document.getElementById("acBrand").value;
       try {
         const hdrs = Object.assign({ "Content-Type": "application/json" }, getAcPinHdr());
-        await fetch("/api/ac/config", { method: "POST", headers: hdrs, body: JSON.stringify({ disconnect: true }) });
-        document.getElementById("acBrand").value = "";
-        document.getElementById("acTclPass").value = "";
-        document.getElementById("acTuyaSecret").value = "";
-        onAcBrandChange();
-        document.getElementById("acControlBox").style.display = "none";
-        document.getElementById("acSetupBox").style.display = "block";
-        document.getElementById("acDisconnectBtn").style.display = "none";
-        document.getElementById("acStatusBadge").innerHTML = "&#9679; Neconectat";
-        document.getElementById("acStatusBadge").style.color = "#94a3b8";
+        const res = await fetch("/api/ac/config", { method: "POST", headers: hdrs, body: JSON.stringify({ disconnect: true, brand }) });
+        const data = await res.json();
+        if (brand === "tcl") document.getElementById("acTclPass").value = "";
+        else if (brand === "tuya") document.getElementById("acTuyaSecret").value = "";
+        else {
+          document.getElementById("acBrand").value = "";
+          document.getElementById("acTclPass").value = "";
+          document.getElementById("acTuyaSecret").value = "";
+        }
+        gAcSetupManual = false;
+        renderAcState(data);
+        if (!data.connected) {
+          onAcBrandChange();
+          document.getElementById("acControlBox").style.display = "none";
+          document.getElementById("acSetupBox").style.display = "block";
+          document.getElementById("acDisconnectBtn").style.display = "none";
+          document.getElementById("acStatusBadge").innerHTML = "&#9679; Neconectat";
+          document.getElementById("acStatusBadge").style.color = "#94a3b8";
+        }
         msgEl.textContent = "Deconectat."; msgEl.style.color = "#94a3b8";
       } catch { }
     }

@@ -625,6 +625,140 @@ static bool tuya_get_token(const char *region, const char *cid, const char *sec,
     return s_tuya_sess.valid;
 }
 
+static const char *tuya_base_url(const char *region) {
+    if (strcmp(region, "us") == 0) return "https://openapi.tuyaus.com";
+    if (strcmp(region, "cn") == 0) return "https://openapi.tuyacn.com";
+    if (strcmp(region, "in") == 0) return "https://openapi.tuyain.com";
+    return "https://openapi.tuyaeu.com";
+}
+
+static int tuya_signed_req(const char *region, const char *cid, const char *sec,
+                           esp_http_client_method_t method, const char *path,
+                           const char *body, char *resp, size_t resp_sz) {
+    const char *base = tuya_base_url(region);
+    char url[256], t_str[24], bhash[65], sign_str[448], sig_hex[65];
+    snprintf(url, sizeof(url), "%s%s", base, path);
+    snprintf(t_str, sizeof(t_str), "%lld", (long long)time(NULL) * 1000LL);
+    calc_sha256_hex((const uint8_t *)(body ? body : ""), body ? strlen(body) : 0, bhash);
+    snprintf(sign_str, sizeof(sign_str), "%s%s%s%s\n%s\n\n%s",
+             cid, s_tuya_sess.token, t_str, (method == HTTP_METHOD_POST) ? "POST" : "GET", bhash, path);
+    uint8_t sig[32];
+    calc_hmac_sha256((const uint8_t *)sec, strlen(sec), (const uint8_t *)sign_str, strlen(sign_str), sig);
+    bytes_to_hex(sig, 32, sig_hex, true);
+    hdr_kv_t hdrs[] = {
+        {"client_id", cid},
+        {"access_token", s_tuya_sess.token},
+        {"sign", sig_hex},
+        {"t", t_str},
+        {"sign_method", "HMAC-SHA256"},
+        {"content-type", "application/json"},
+    };
+    return http_req_json(url, method, hdrs, (method == HTTP_METHOD_POST) ? 6 : 5, body, resp, resp_sz);
+}
+
+static const char *tuya_ir_int_to_mode(int m) {
+    switch (m) {
+        case 0: return "cool";
+        case 1: return "heat";
+        case 2: return "auto";
+        case 3: return "fan";
+        case 4: return "dry";
+        default: return "cool";
+    }
+}
+
+static int tuya_ir_mode_to_int(const char *m) {
+    if (strcmp(m, "cool") == 0) return 0;
+    if (strcmp(m, "heat") == 0) return 1;
+    if (strcmp(m, "auto") == 0) return 2;
+    if (strcmp(m, "fan") == 0) return 3;
+    if (strcmp(m, "dry") == 0) return 4;
+    return 0;
+}
+
+bool ac_control_connect_tuya(const char *region, const char *cid, const char *secret, const char *device_id,
+                             char *devices_json, size_t devices_json_sz,
+                             char *sel_dev_id, size_t sel_dev_id_sz,
+                             char *err_buf, size_t err_sz) {
+    ac_control_init();
+    xSemaphoreTake(s_ac_mutex, portMAX_DELAY);
+    if (!tuya_get_token(region, cid, secret, true, err_buf, err_sz)) {
+        xSemaphoreGive(s_ac_mutex);
+        return false;
+    }
+
+    char ir_id[48] = {0}, target_rem[48] = {0};
+    const char *colon = strchr(device_id, ':');
+    if (colon) {
+        size_t ilen = (size_t)(colon - device_id);
+        if (ilen >= sizeof(ir_id)) ilen = sizeof(ir_id) - 1;
+        memcpy(ir_id, device_id, ilen);
+        strncpy(target_rem, colon + 1, sizeof(target_rem) - 1);
+    } else {
+        strncpy(ir_id, device_id, sizeof(ir_id) - 1);
+    }
+
+    char path[160];
+    snprintf(path, sizeof(path), "/v2.0/infrareds/%s/remotes", ir_id);
+    char *resp = malloc(4096);
+    if (!resp) {
+        snprintf(err_buf, err_sz, "Memorie insuficienta");
+        xSemaphoreGive(s_ac_mutex);
+        return false;
+    }
+    int code = tuya_signed_req(region, cid, secret, HTTP_METHOD_GET, path, NULL, resp, 4096);
+    cJSON *j = cJSON_Parse(resp);
+    free(resp);
+
+    cJSON *arr = (code == 200 && j && cJSON_IsTrue(cJSON_GetObjectItem(j, "success")))
+                     ? cJSON_GetObjectItem(j, "result") : NULL;
+    if (cJSON_IsArray(arr) && cJSON_GetArraySize(arr) > 0) {
+        cJSON *out_arr = cJSON_CreateArray();
+        sel_dev_id[0] = '\0';
+        cJSON *r = NULL;
+        cJSON_ArrayForEach(r, arr) {
+            cJSON *rid_j = cJSON_GetObjectItem(r, "remote_id");
+            if (!cJSON_IsString(rid_j) || !rid_j->valuestring[0]) continue;
+            if (target_rem[0] && strcmp(rid_j->valuestring, target_rem) != 0) continue;
+            cJSON *cat_j = cJSON_GetObjectItem(r, "category_id");
+            if (cJSON_IsNumber(cat_j) && cat_j->valueint != 0 && cat_j->valueint != 5) continue;
+            cJSON *rn_j = cJSON_GetObjectItem(r, "remote_name");
+            if (!cJSON_IsString(rn_j) || !rn_j->valuestring[0]) rn_j = cJSON_GetObjectItem(r, "brand_name");
+            char pair_id[48];
+            snprintf(pair_id, sizeof(pair_id), "%s:%s", ir_id, rid_j->valuestring);
+            if (!sel_dev_id[0]) {
+                strncpy(sel_dev_id, pair_id, sel_dev_id_sz - 1);
+                sel_dev_id[sel_dev_id_sz - 1] = '\0';
+            }
+            cJSON *o = cJSON_CreateObject();
+            cJSON_AddStringToObject(o, "id", pair_id);
+            cJSON_AddStringToObject(o, "name", (cJSON_IsString(rn_j) && rn_j->valuestring[0]) ? rn_j->valuestring : "AC Tuya");
+            cJSON_AddBoolToObject(o, "online", true);
+            cJSON_AddItemToArray(out_arr, o);
+        }
+        if (sel_dev_id[0]) {
+            char *printed = cJSON_PrintUnformatted(out_arr);
+            cJSON_Delete(out_arr);
+            cJSON_Delete(j);
+            if (printed) {
+                strncpy(devices_json, printed, devices_json_sz - 1);
+                devices_json[devices_json_sz - 1] = '\0';
+                free(printed);
+            }
+            xSemaphoreGive(s_ac_mutex);
+            return true;
+        }
+        cJSON_Delete(out_arr);
+    }
+    if (j) cJSON_Delete(j);
+
+    strncpy(sel_dev_id, device_id, sel_dev_id_sz - 1);
+    sel_dev_id[sel_dev_id_sz - 1] = '\0';
+    snprintf(devices_json, devices_json_sz, "[{\"id\":\"%s\",\"name\":\"AC Tuya\",\"online\":true}]", device_id);
+    xSemaphoreGive(s_ac_mutex);
+    return true;
+}
+
 static const char *tcl_int_to_mode(int wm) {
     switch (wm) {
         case 0: return "auto";
@@ -655,11 +789,48 @@ static bool json_has_key(cJSON *rep, cJSON *des, const char *k) {
     return (rep && cJSON_GetObjectItem(rep, k) != NULL) || (des && cJSON_GetObjectItem(des, k) != NULL);
 }
 
+static void ac_resolve_active_brand(char *out_brand, size_t out_sz) {
+    out_brand[0] = '\0';
+    const char *sel = g_settings.ac_selected_device_id;
+    if (sel[0] && g_settings.ac_devices_json[0]) {
+        cJSON *arr = cJSON_Parse(g_settings.ac_devices_json);
+        if (cJSON_IsArray(arr)) {
+            int n = cJSON_GetArraySize(arr);
+            for (int i = 0; i < n; i++) {
+                cJSON *item = cJSON_GetArrayItem(arr, i);
+                cJSON *id_j = cJSON_GetObjectItem(item, "id");
+                if (cJSON_IsString(id_j) && strcmp(id_j->valuestring, sel) == 0) {
+                    cJSON *br_j = cJSON_GetObjectItem(item, "brand");
+                    if (cJSON_IsString(br_j) && br_j->valuestring[0]) {
+                        strncpy(out_brand, br_j->valuestring, out_sz - 1);
+                        out_brand[out_sz - 1] = '\0';
+                    }
+                    break;
+                }
+            }
+        }
+        cJSON_Delete(arr);
+    }
+    if (!out_brand[0] && sel[0]) {
+        if (strchr(sel, ':') != NULL || (g_settings.ac_tuya_device_id[0] && strcmp(sel, g_settings.ac_tuya_device_id) == 0)) {
+            strncpy(out_brand, "tuya", out_sz - 1);
+            out_brand[out_sz - 1] = '\0';
+        }
+    }
+    if (!out_brand[0]) {
+        strncpy(out_brand, g_settings.ac_brand, out_sz - 1);
+        out_brand[out_sz - 1] = '\0';
+    }
+}
+
 bool ac_control_get_state(ac_state_t *out_state, char *err_buf, size_t err_sz) {
     ac_control_init();
     xSemaphoreTake(s_ac_mutex, portMAX_DELAY);
 
-    if (strcmp(g_settings.ac_brand, "tcl") == 0) {
+    char active_brand[16] = {0};
+    ac_resolve_active_brand(active_brand, sizeof(active_brand));
+
+    if (strcmp(active_brand, "tcl") == 0) {
         if (!g_settings.ac_tcl_email[0] || !g_settings.ac_tcl_password[0] || !g_settings.ac_selected_device_id[0]) {
             snprintf(err_buf, err_sz, "AC TCL neconfigurat");
             xSemaphoreGive(s_ac_mutex);
@@ -727,10 +898,49 @@ bool ac_control_get_state(ac_state_t *out_state, char *err_buf, size_t err_sz) {
         return true;
     }
 
-    if (strcmp(g_settings.ac_brand, "tuya") == 0) {
+    if (strcmp(active_brand, "tuya") == 0) {
         if (!tuya_get_token(g_settings.ac_tuya_region, g_settings.ac_tuya_client_id, g_settings.ac_tuya_client_secret, false, err_buf, err_sz)) {
             xSemaphoreGive(s_ac_mutex);
             return false;
+        }
+        const char *active_id = g_settings.ac_selected_device_id[0] ? g_settings.ac_selected_device_id : g_settings.ac_tuya_device_id;
+        const char *colon = strchr(active_id, ':');
+        if (colon) {
+            char ir_id[48] = {0}, rem_id[48] = {0}, path[192];
+            size_t ilen = (size_t)(colon - active_id);
+            if (ilen >= sizeof(ir_id)) ilen = sizeof(ir_id) - 1;
+            memcpy(ir_id, active_id, ilen);
+            strncpy(rem_id, colon + 1, sizeof(rem_id) - 1);
+            snprintf(path, sizeof(path), "/v2.0/infrareds/%s/remotes/%s/ac/status", ir_id, rem_id);
+            char *resp = malloc(2048);
+            if (!resp) { xSemaphoreGive(s_ac_mutex); return false; }
+            int code = tuya_signed_req(g_settings.ac_tuya_region, g_settings.ac_tuya_client_id, g_settings.ac_tuya_client_secret, HTTP_METHOD_GET, path, NULL, resp, 2048);
+            cJSON *j = cJSON_Parse(resp);
+            free(resp);
+            if (code != 200 || !j || !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+                cJSON *m = j ? cJSON_GetObjectItem(j, "msg") : NULL;
+                snprintf(err_buf, err_sz, "%s", cJSON_IsString(m) ? m->valuestring : "Eroare Tuya IR AC");
+                if (j) cJSON_Delete(j);
+                xSemaphoreGive(s_ac_mutex);
+                return false;
+            }
+            cJSON *r = cJSON_GetObjectItem(j, "result");
+            ac_state_t res = {.valid = true, .target_temp = 22, .mode = "cool", .fan_max = 3};
+            cJSON *pw = r ? cJSON_GetObjectItem(r, "power") : NULL;
+            cJSON *tp = r ? cJSON_GetObjectItem(r, "temp") : NULL;
+            cJSON *md = r ? cJSON_GetObjectItem(r, "mode") : NULL;
+            cJSON *wd = r ? cJSON_GetObjectItem(r, "wind") : NULL;
+            if (pw) res.power = cJSON_IsString(pw) ? (strcmp(pw->valuestring, "1") == 0) : (pw->valueint == 1);
+            if (tp) res.target_temp = cJSON_IsString(tp) ? atoi(tp->valuestring) : tp->valueint;
+            int mi = md ? (cJSON_IsString(md) ? atoi(md->valuestring) : md->valueint) : 0;
+            int wi = wd ? (cJSON_IsString(wd) ? atoi(wd->valuestring) : wd->valueint) : 0;
+            strncpy(res.mode, tuya_ir_int_to_mode(mi), sizeof(res.mode) - 1);
+            res.fan_speed = wi < 0 ? 0 : (wi > 3 ? 3 : wi);
+            cJSON_Delete(j);
+            s_last_state = res;
+            *out_state = res;
+            xSemaphoreGive(s_ac_mutex);
+            return true;
         }
         const char *base = "https://openapi.tuyaeu.com";
         if (strcmp(g_settings.ac_tuya_region, "us") == 0) base = "https://openapi.tuyaus.com";
@@ -803,7 +1013,10 @@ bool ac_control_send_cmd(const ac_cmd_t *cmd, ac_state_t *out_state, char *err_b
     ac_control_init();
     xSemaphoreTake(s_ac_mutex, portMAX_DELAY);
 
-    if (strcmp(g_settings.ac_brand, "tcl") == 0) {
+    char active_brand[16] = {0};
+    ac_resolve_active_brand(active_brand, sizeof(active_brand));
+
+    if (strcmp(active_brand, "tcl") == 0) {
         if (!tcl_ensure_session(g_settings.ac_tcl_email, g_settings.ac_tcl_password, false, err_buf, err_sz)) {
             xSemaphoreGive(s_ac_mutex);
             return false;
@@ -880,10 +1093,96 @@ bool ac_control_send_cmd(const ac_cmd_t *cmd, ac_state_t *out_state, char *err_b
         return true;
     }
 
-    if (strcmp(g_settings.ac_brand, "tuya") == 0) {
+    if (strcmp(active_brand, "tuya") == 0) {
         if (!tuya_get_token(g_settings.ac_tuya_region, g_settings.ac_tuya_client_id, g_settings.ac_tuya_client_secret, false, err_buf, err_sz)) {
             xSemaphoreGive(s_ac_mutex);
             return false;
+        }
+        const char *active_id = g_settings.ac_selected_device_id[0] ? g_settings.ac_selected_device_id : g_settings.ac_tuya_device_id;
+        const char *colon = strchr(active_id, ':');
+        if (colon) {
+            char ir_id[48] = {0}, rem_id[48] = {0}, path[192];
+            size_t ilen = (size_t)(colon - active_id);
+            if (ilen >= sizeof(ir_id)) ilen = sizeof(ir_id) - 1;
+            memcpy(ir_id, active_id, ilen);
+            strncpy(rem_id, colon + 1, sizeof(rem_id) - 1);
+            snprintf(path, sizeof(path), "/v2.0/infrareds/%s/remotes/%s/ac/status", ir_id, rem_id);
+            char *resp = malloc(2048);
+            if (!resp) { xSemaphoreGive(s_ac_mutex); return false; }
+            int code = tuya_signed_req(g_settings.ac_tuya_region, g_settings.ac_tuya_client_id, g_settings.ac_tuya_client_secret, HTTP_METHOD_GET, path, NULL, resp, 2048);
+            cJSON *j = cJSON_Parse(resp);
+            free(resp);
+            if (code != 200 || !j || !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+                cJSON *m = j ? cJSON_GetObjectItem(j, "msg") : NULL;
+                snprintf(err_buf, err_sz, "%s", cJSON_IsString(m) ? m->valuestring : "Eroare Tuya IR AC");
+                if (j) cJSON_Delete(j);
+                xSemaphoreGive(s_ac_mutex);
+                return false;
+            }
+            cJSON *r = cJSON_GetObjectItem(j, "result");
+            ac_state_t res = {.valid = true, .target_temp = 22, .mode = "cool", .fan_max = 3};
+            cJSON *pw = r ? cJSON_GetObjectItem(r, "power") : NULL;
+            cJSON *tp = r ? cJSON_GetObjectItem(r, "temp") : NULL;
+            cJSON *md = r ? cJSON_GetObjectItem(r, "mode") : NULL;
+            cJSON *wd = r ? cJSON_GetObjectItem(r, "wind") : NULL;
+            if (pw) res.power = cJSON_IsString(pw) ? (strcmp(pw->valuestring, "1") == 0) : (pw->valueint == 1);
+            if (tp) res.target_temp = cJSON_IsString(tp) ? atoi(tp->valuestring) : tp->valueint;
+            int mi = md ? (cJSON_IsString(md) ? atoi(md->valuestring) : md->valueint) : 0;
+            int wi = wd ? (cJSON_IsString(wd) ? atoi(wd->valuestring) : wd->valueint) : 0;
+            strncpy(res.mode, tuya_ir_int_to_mode(mi), sizeof(res.mode) - 1);
+            res.fan_speed = wi < 0 ? 0 : (wi > 3 ? 3 : wi);
+            cJSON_Delete(j);
+
+            if (cmd->has_power) res.power = cmd->power;
+            if (cmd->has_target_temp) {
+                int tt = cmd->target_temp;
+                res.target_temp = tt < 16 ? 16 : (tt > 30 ? 30 : tt);
+            }
+            if (cmd->has_mode) {
+                strncpy(res.mode, cmd->mode, sizeof(res.mode) - 1);
+                if (!cmd->has_power) res.power = true;
+            }
+            if (cmd->has_fan_speed) {
+                int fs = cmd->fan_speed;
+                res.fan_speed = fs < 0 ? 0 : (fs > 3 ? 3 : fs);
+            }
+
+            cJSON *ir_cmd = cJSON_CreateObject();
+            cJSON_AddNumberToObject(ir_cmd, "power", res.power ? 1 : 0);
+            cJSON_AddNumberToObject(ir_cmd, "mode", tuya_ir_mode_to_int(res.mode));
+            cJSON_AddNumberToObject(ir_cmd, "temp", res.target_temp);
+            cJSON_AddNumberToObject(ir_cmd, "wind", res.fan_speed);
+            char *ir_body = cJSON_PrintUnformatted(ir_cmd);
+            cJSON_Delete(ir_cmd);
+
+            char cmd_path[192];
+            snprintf(cmd_path, sizeof(cmd_path), "/v2.0/infrareds/%s/air-conditioners/%s/scenes/command", ir_id, rem_id);
+            char *resp2 = malloc(2048);
+            if (!resp2 || !ir_body) {
+                free(resp2);
+                free(ir_body);
+                xSemaphoreGive(s_ac_mutex);
+                return false;
+            }
+            int code2 = tuya_signed_req(g_settings.ac_tuya_region, g_settings.ac_tuya_client_id,
+                                        g_settings.ac_tuya_client_secret, HTTP_METHOD_POST,
+                                        cmd_path, ir_body, resp2, 2048);
+            free(ir_body);
+            cJSON *j2 = cJSON_Parse(resp2);
+            free(resp2);
+            bool ok2 = (code2 == 200 && j2 && cJSON_IsTrue(cJSON_GetObjectItem(j2, "success")));
+            if (!ok2) {
+                cJSON *m2 = j2 ? cJSON_GetObjectItem(j2, "msg") : NULL;
+                snprintf(err_buf, err_sz, "%s", cJSON_IsString(m2) ? m2->valuestring : "Eroare comanda Tuya IR AC");
+                if (j2) cJSON_Delete(j2);
+                xSemaphoreGive(s_ac_mutex);
+                return false;
+            }
+            cJSON_Delete(j2);
+            s_last_state = res;
+            *out_state = res;
+            xSemaphoreGive(s_ac_mutex);
+            return true;
         }
         cJSON *root = cJSON_CreateObject();
         cJSON *cmds = cJSON_AddArrayToObject(root, "commands");
