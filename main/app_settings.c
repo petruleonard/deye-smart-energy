@@ -127,6 +127,29 @@ esp_err_t app_settings_init(void)
     if (nvs_get_i32(nvs, "w_lat_e4", &i32v) == ESP_OK) g_settings.weather_lat = (float)i32v / 10000.0f;
     if (nvs_get_i32(nvs, "w_lon_e4", &i32v) == ESP_OK) g_settings.weather_lon = (float)i32v / 10000.0f;
 
+    len = sizeof(g_settings.ac_brand);
+    nvs_get_str(nvs, "ac_brand", g_settings.ac_brand, &len);
+    len = sizeof(g_settings.ac_tcl_email);
+    nvs_get_str(nvs, "ac_tcl_em", g_settings.ac_tcl_email, &len);
+    len = sizeof(g_settings.ac_tcl_password);
+    nvs_get_str(nvs, "ac_tcl_pw", g_settings.ac_tcl_password, &len);
+    len = sizeof(g_settings.ac_tuya_region);
+    if (nvs_get_str(nvs, "ac_tuya_rg", g_settings.ac_tuya_region, &len) != ESP_OK || strlen(g_settings.ac_tuya_region) == 0) {
+        strncpy(g_settings.ac_tuya_region, "eu", sizeof(g_settings.ac_tuya_region) - 1);
+    }
+    len = sizeof(g_settings.ac_tuya_client_id);
+    nvs_get_str(nvs, "ac_tuya_id", g_settings.ac_tuya_client_id, &len);
+    len = sizeof(g_settings.ac_tuya_client_secret);
+    nvs_get_str(nvs, "ac_tuya_sc", g_settings.ac_tuya_client_secret, &len);
+    len = sizeof(g_settings.ac_tuya_device_id);
+    nvs_get_str(nvs, "ac_tuya_dv", g_settings.ac_tuya_device_id, &len);
+    len = sizeof(g_settings.ac_selected_device_id);
+    nvs_get_str(nvs, "ac_sel_id", g_settings.ac_selected_device_id, &len);
+    len = sizeof(g_settings.ac_devices_json);
+    if (nvs_get_str(nvs, "ac_devs", g_settings.ac_devices_json, &len) != ESP_OK || strlen(g_settings.ac_devices_json) == 0) {
+        strncpy(g_settings.ac_devices_json, "[]", sizeof(g_settings.ac_devices_json) - 1);
+    }
+
     nvs_close(nvs);
 
     ESP_LOGI(TAG, "Settings loaded: SSID='%s', Logger='%s' (%lu), URL='%s', Configured=%d",
@@ -174,6 +197,15 @@ esp_err_t app_settings_save(const app_settings_t *settings)
     nvs_set_str(nvs, "w_city", settings->weather_city);
     nvs_set_i32(nvs, "w_lat_e4", (int32_t)(settings->weather_lat * 10000.0f));
     nvs_set_i32(nvs, "w_lon_e4", (int32_t)(settings->weather_lon * 10000.0f));
+    nvs_set_str(nvs, "ac_brand", settings->ac_brand);
+    nvs_set_str(nvs, "ac_tcl_em", settings->ac_tcl_email);
+    nvs_set_str(nvs, "ac_tcl_pw", settings->ac_tcl_password);
+    nvs_set_str(nvs, "ac_tuya_rg", settings->ac_tuya_region[0] ? settings->ac_tuya_region : "eu");
+    nvs_set_str(nvs, "ac_tuya_id", settings->ac_tuya_client_id);
+    nvs_set_str(nvs, "ac_tuya_sc", settings->ac_tuya_client_secret);
+    nvs_set_str(nvs, "ac_tuya_dv", settings->ac_tuya_device_id);
+    nvs_set_str(nvs, "ac_sel_id", settings->ac_selected_device_id);
+    nvs_set_str(nvs, "ac_devs", settings->ac_devices_json[0] ? settings->ac_devices_json : "[]");
 
     err = nvs_commit(nvs);
     nvs_close(nvs);

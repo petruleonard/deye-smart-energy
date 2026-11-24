@@ -11,6 +11,7 @@ idf_component_register(
         "sys_metrics.c"
         "local_web_server.c"
         "telegram_notify.c"
+        "ac_control.c"
     INCLUDE_DIRS
         "."
     EMBED_TXTFILES

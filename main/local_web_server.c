@@ -1,5 +1,7 @@
 #include "local_web_server.h"
+#include "ac_control.h"
 #include "app_config.h"
+#include "cJSON.h"
 #include "app_settings.h"
 #include "deye_data.h"
 #include "deye_modbus.h"
@@ -2050,6 +2052,272 @@ static esp_err_t ai_audit_post_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+static void ac_state_to_cjson(cJSON *parent, const ac_state_t *st) {
+    cJSON *s = cJSON_AddObjectToObject(parent, "state");
+    cJSON_AddBoolToObject(s, "power", st->power);
+    cJSON_AddNumberToObject(s, "target_temp", st->target_temp);
+    if (st->has_current_temp) {
+        cJSON_AddNumberToObject(s, "current_temp", ((int)(st->current_temp * 10.0f + 0.5f)) / 10.0);
+    } else {
+        cJSON_AddNullToObject(s, "current_temp");
+    }
+    cJSON_AddStringToObject(s, "mode", st->mode);
+    cJSON_AddNumberToObject(s, "fan_speed", st->fan_speed);
+    cJSON_AddNumberToObject(s, "fan_max", st->fan_max > 0 ? st->fan_max : 7);
+}
+
+static esp_err_t ac_status_get_handler(httpd_req_t *req) {
+    if (!check_admin_pin_hdr(req)) return ESP_OK;
+
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "ok", true);
+    cJSON_AddStringToObject(root, "brand", g_settings.ac_brand);
+    cJSON_AddStringToObject(root, "tcl_email", g_settings.ac_tcl_email);
+    cJSON_AddBoolToObject(root, "tcl_password_set", g_settings.ac_tcl_password[0] != '\0');
+    cJSON_AddStringToObject(root, "tuya_region", g_settings.ac_tuya_region[0] ? g_settings.ac_tuya_region : "eu");
+    cJSON_AddStringToObject(root, "tuya_client_id", g_settings.ac_tuya_client_id);
+    cJSON_AddBoolToObject(root, "tuya_secret_set", g_settings.ac_tuya_client_secret[0] != '\0');
+    cJSON_AddStringToObject(root, "tuya_device_id", g_settings.ac_tuya_device_id);
+    cJSON_AddStringToObject(root, "selected_device_id", g_settings.ac_selected_device_id);
+
+    cJSON *devs = cJSON_Parse(g_settings.ac_devices_json[0] ? g_settings.ac_devices_json : "[]");
+    cJSON_AddItemToObject(root, "devices", devs ? devs : cJSON_CreateArray());
+
+    ac_state_t st = {0};
+    char err_buf[128] = {0};
+    bool connected = false;
+    if (g_settings.ac_brand[0] != '\0' && g_settings.ac_selected_device_id[0] != '\0') {
+        connected = ac_control_get_state(&st, err_buf, sizeof(err_buf));
+    }
+    cJSON_AddBoolToObject(root, "connected", connected);
+    if (connected) {
+        ac_state_to_cjson(root, &st);
+        cJSON_AddStringToObject(root, "error", "");
+    } else {
+        cJSON_AddNullToObject(root, "state");
+        cJSON_AddStringToObject(root, "error", err_buf);
+    }
+
+    char *out = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_send(req, out ? out : "{\"ok\":false}", HTTPD_RESP_USE_STRLEN);
+    free(out);
+    return ESP_OK;
+}
+
+static esp_err_t ac_config_post_handler(httpd_req_t *req) {
+    if (!check_admin_pin_hdr(req)) return ESP_OK;
+
+    char body[512];
+    if (read_req_body(req, body, sizeof(body)) != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "{\"ok\":false,\"error\":\"Body invalid\"}");
+        return ESP_FAIL;
+    }
+
+    cJSON *in = cJSON_Parse(body);
+    if (!in) {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"ok\":false,\"error\":\"JSON invalid\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+
+    cJSON *disc = cJSON_GetObjectItem(in, "disconnect");
+    if (cJSON_IsTrue(disc)) {
+        app_settings_t cfg = g_settings;
+        cfg.ac_brand[0] = '\0';
+        cfg.ac_tcl_password[0] = '\0';
+        cfg.ac_tuya_client_secret[0] = '\0';
+        cfg.ac_selected_device_id[0] = '\0';
+        strcpy(cfg.ac_devices_json, "[]");
+        app_settings_save(&cfg);
+        ac_control_clear_cache();
+        cJSON_Delete(in);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"ok\":true,\"connected\":false,\"devices\":[]}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+
+    cJSON *b_j = cJSON_GetObjectItem(in, "brand");
+    const char *brand = (cJSON_IsString(b_j) && b_j->valuestring) ? b_j->valuestring : "";
+
+    if (strcmp(brand, "tcl") == 0) {
+        cJSON *em_j = cJSON_GetObjectItem(in, "tcl_email");
+        cJSON *pw_j = cJSON_GetObjectItem(in, "tcl_password");
+        char email[96] = {0}, pw[64] = {0};
+        if (cJSON_IsString(em_j) && em_j->valuestring[0]) strncpy(email, em_j->valuestring, sizeof(email) - 1);
+        else strncpy(email, g_settings.ac_tcl_email, sizeof(email) - 1);
+        if (cJSON_IsString(pw_j) && pw_j->valuestring[0]) strncpy(pw, pw_j->valuestring, sizeof(pw) - 1);
+        else strncpy(pw, g_settings.ac_tcl_password, sizeof(pw) - 1);
+        cJSON_Delete(in);
+
+        if (!email[0] || !pw[0]) {
+            httpd_resp_set_type(req, "application/json");
+            httpd_resp_send(req, "{\"ok\":false,\"error\":\"Introdu e-mailul si parola TCL Home.\"}", HTTPD_RESP_USE_STRLEN);
+            return ESP_OK;
+        }
+
+        char devs_json[512] = "[]", first_id[48] = {0}, err_buf[128] = {0};
+        if (!ac_control_connect_tcl(email, pw, devs_json, sizeof(devs_json), first_id, sizeof(first_id), err_buf, sizeof(err_buf))) {
+            cJSON *er = cJSON_CreateObject();
+            cJSON_AddBoolToObject(er, "ok", false);
+            cJSON_AddStringToObject(er, "error", err_buf[0] ? err_buf : "Conectare TCL esuata");
+            char *out = cJSON_PrintUnformatted(er);
+            cJSON_Delete(er);
+            httpd_resp_set_type(req, "application/json");
+            httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN);
+            free(out);
+            return ESP_OK;
+        }
+
+        app_settings_t cfg = g_settings;
+        strcpy(cfg.ac_brand, "tcl");
+        strncpy(cfg.ac_tcl_email, email, sizeof(cfg.ac_tcl_email) - 1);
+        strncpy(cfg.ac_tcl_password, pw, sizeof(cfg.ac_tcl_password) - 1);
+        strncpy(cfg.ac_devices_json, devs_json, sizeof(cfg.ac_devices_json) - 1);
+        strncpy(cfg.ac_selected_device_id, first_id, sizeof(cfg.ac_selected_device_id) - 1);
+        app_settings_save(&cfg);
+
+        ac_state_t st = {0};
+        bool ok_st = first_id[0] ? ac_control_get_state(&st, err_buf, sizeof(err_buf)) : false;
+        cJSON *res = cJSON_CreateObject();
+        cJSON_AddBoolToObject(res, "ok", true);
+        cJSON_AddStringToObject(res, "brand", "tcl");
+        cJSON_AddBoolToObject(res, "connected", first_id[0] != '\0');
+        cJSON_AddStringToObject(res, "selected_device_id", first_id);
+        cJSON *dj = cJSON_Parse(devs_json);
+        cJSON_AddItemToObject(res, "devices", dj ? dj : cJSON_CreateArray());
+        if (ok_st) ac_state_to_cjson(res, &st);
+        else cJSON_AddNullToObject(res, "state");
+
+        char *out = cJSON_PrintUnformatted(res);
+        cJSON_Delete(res);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN);
+        free(out);
+        return ESP_OK;
+    }
+
+    if (strcmp(brand, "tuya") == 0) {
+        cJSON *rg_j = cJSON_GetObjectItem(in, "tuya_region");
+        cJSON *id_j = cJSON_GetObjectItem(in, "tuya_client_id");
+        cJSON *sc_j = cJSON_GetObjectItem(in, "tuya_client_secret");
+        cJSON *dv_j = cJSON_GetObjectItem(in, "tuya_device_id");
+
+        app_settings_t cfg = g_settings;
+        strcpy(cfg.ac_brand, "tuya");
+        strncpy(cfg.ac_tuya_region, (cJSON_IsString(rg_j) && rg_j->valuestring[0]) ? rg_j->valuestring : "eu", sizeof(cfg.ac_tuya_region) - 1);
+        if (cJSON_IsString(id_j) && id_j->valuestring[0]) strncpy(cfg.ac_tuya_client_id, id_j->valuestring, sizeof(cfg.ac_tuya_client_id) - 1);
+        if (cJSON_IsString(sc_j) && sc_j->valuestring[0]) strncpy(cfg.ac_tuya_client_secret, sc_j->valuestring, sizeof(cfg.ac_tuya_client_secret) - 1);
+        if (cJSON_IsString(dv_j) && dv_j->valuestring[0]) strncpy(cfg.ac_tuya_device_id, dv_j->valuestring, sizeof(cfg.ac_tuya_device_id) - 1);
+        cJSON_Delete(in);
+
+        if (!cfg.ac_tuya_client_id[0] || !cfg.ac_tuya_client_secret[0] || !cfg.ac_tuya_device_id[0]) {
+            httpd_resp_set_type(req, "application/json");
+            httpd_resp_send(req, "{\"ok\":false,\"error\":\"Introdu Client ID, Secret si Device ID Tuya.\"}", HTTPD_RESP_USE_STRLEN);
+            return ESP_OK;
+        }
+        strncpy(cfg.ac_selected_device_id, cfg.ac_tuya_device_id, sizeof(cfg.ac_selected_device_id) - 1);
+        snprintf(cfg.ac_devices_json, sizeof(cfg.ac_devices_json),
+                 "[{\"id\":\"%s\",\"name\":\"AC Tuya\",\"online\":true}]", cfg.ac_tuya_device_id);
+        app_settings_save(&cfg);
+
+        ac_state_t st = {0};
+        char err_buf[128] = {0};
+        if (!ac_control_get_state(&st, err_buf, sizeof(err_buf))) {
+            cJSON *er = cJSON_CreateObject();
+            cJSON_AddBoolToObject(er, "ok", false);
+            cJSON_AddStringToObject(er, "error", err_buf[0] ? err_buf : "Eroare Tuya");
+            char *out = cJSON_PrintUnformatted(er);
+            cJSON_Delete(er);
+            httpd_resp_set_type(req, "application/json");
+            httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN);
+            free(out);
+            return ESP_OK;
+        }
+
+        cJSON *res = cJSON_CreateObject();
+        cJSON_AddBoolToObject(res, "ok", true);
+        cJSON_AddStringToObject(res, "brand", "tuya");
+        cJSON_AddBoolToObject(res, "connected", true);
+        cJSON_AddStringToObject(res, "selected_device_id", cfg.ac_selected_device_id);
+        cJSON *dj = cJSON_Parse(cfg.ac_devices_json);
+        cJSON_AddItemToObject(res, "devices", dj ? dj : cJSON_CreateArray());
+        ac_state_to_cjson(res, &st);
+        char *out = cJSON_PrintUnformatted(res);
+        cJSON_Delete(res);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN);
+        free(out);
+        return ESP_OK;
+    }
+
+    cJSON_Delete(in);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"ok\":false,\"error\":\"Selecteaza un brand valid (TCL sau Tuya).\"}", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
+static esp_err_t ac_control_post_handler(httpd_req_t *req) {
+    if (!check_admin_pin_hdr(req)) return ESP_OK;
+
+    char body[256];
+    if (read_req_body(req, body, sizeof(body)) != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "{\"ok\":false,\"error\":\"Body invalid\"}");
+        return ESP_FAIL;
+    }
+
+    cJSON *in = cJSON_Parse(body);
+    if (!in) {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"ok\":false,\"error\":\"JSON invalid\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+
+    cJSON *did_j = cJSON_GetObjectItem(in, "device_id");
+    if (cJSON_IsString(did_j) && did_j->valuestring[0] &&
+        strcmp(did_j->valuestring, g_settings.ac_selected_device_id) != 0) {
+        app_settings_t cfg = g_settings;
+        strncpy(cfg.ac_selected_device_id, did_j->valuestring, sizeof(cfg.ac_selected_device_id) - 1);
+        app_settings_save(&cfg);
+    }
+
+    ac_cmd_t cmd = {0};
+    cJSON *p_j = cJSON_GetObjectItem(in, "power");
+    cJSON *t_j = cJSON_GetObjectItem(in, "target_temp");
+    cJSON *m_j = cJSON_GetObjectItem(in, "mode");
+    cJSON *f_j = cJSON_GetObjectItem(in, "fan_speed");
+    if (cJSON_IsBool(p_j)) { cmd.has_power = true; cmd.power = cJSON_IsTrue(p_j); }
+    if (cJSON_IsNumber(t_j)) { cmd.has_target_temp = true; cmd.target_temp = t_j->valueint; }
+    if (cJSON_IsString(m_j) && m_j->valuestring[0]) { cmd.has_mode = true; strncpy(cmd.mode, m_j->valuestring, sizeof(cmd.mode) - 1); }
+    if (cJSON_IsNumber(f_j)) { cmd.has_fan_speed = true; cmd.fan_speed = f_j->valueint; }
+    cJSON_Delete(in);
+
+    ac_state_t st = {0};
+    char err_buf[128] = {0};
+    bool ok = false;
+    if (cmd.has_power || cmd.has_target_temp || cmd.has_mode || cmd.has_fan_speed) {
+        ok = ac_control_send_cmd(&cmd, &st, err_buf, sizeof(err_buf));
+    } else {
+        ok = ac_control_get_state(&st, err_buf, sizeof(err_buf));
+    }
+
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddBoolToObject(res, "ok", ok);
+    if (ok) {
+        ac_state_to_cjson(res, &st);
+    } else {
+        cJSON_AddStringToObject(res, "error", err_buf[0] ? err_buf : "Eroare comanda AC");
+    }
+    char *out = cJSON_PrintUnformatted(res);
+    cJSON_Delete(res);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN);
+    free(out);
+    return ESP_OK;
+}
+
 static esp_err_t manifest_get_handler(httpd_req_t *req) {
     static const char MANIFEST_JSON[] =
         "{"
@@ -2095,7 +2363,7 @@ static esp_err_t icon_512_get_handler(httpd_req_t *req) {
 
 esp_err_t local_web_server_init(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 32;
+    config.max_uri_handlers = 36;
     config.max_open_sockets = 8;
     config.backlog_conn = 8;
     config.lru_purge_enable = true;
@@ -2128,6 +2396,9 @@ esp_err_t local_web_server_init(void) {
         { .uri = "/api/config",            .method = HTTP_GET,  .handler = config_get_handler },
         { .uri = "/api/config",            .method = HTTP_POST, .handler = config_post_handler },
         { .uri = "/api/battery/config",    .method = HTTP_POST, .handler = battery_config_post_handler },
+        { .uri = "/api/ac/status",         .method = HTTP_GET,  .handler = ac_status_get_handler },
+        { .uri = "/api/ac/config",         .method = HTTP_POST, .handler = ac_config_post_handler },
+        { .uri = "/api/ac/control",        .method = HTTP_POST, .handler = ac_control_post_handler },
         { .uri = "/api/telegram/test",     .method = HTTP_POST, .handler = telegram_test_post_handler },
         { .uri = "/api/logger/scan",       .method = HTTP_GET,  .handler = logger_scan_get_handler },
         { .uri = "/api/logger/scan/status",.method = HTTP_GET,  .handler = logger_scan_status_get_handler },

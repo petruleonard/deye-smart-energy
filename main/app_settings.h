@@ -37,6 +37,15 @@ typedef struct {
     char weather_city[48];
     float weather_lat;
     float weather_lon;
+    char ac_brand[12];
+    char ac_tcl_email[96];
+    char ac_tcl_password[64];
+    char ac_tuya_region[8];
+    char ac_tuya_client_id[48];
+    char ac_tuya_client_secret[64];
+    char ac_tuya_device_id[48];
+    char ac_selected_device_id[48];
+    char ac_devices_json[512];
 } app_settings_t;
 
 // Global settings instance

@@ -1150,6 +1150,26 @@
 </head>
 
 <body>
+  <div id="appPinGate"
+    style="position:fixed; inset:0; z-index:9999; background:radial-gradient(circle at top, #0f172a 0%, #020617 100%); display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div
+      style="width:100%; max-width:340px; background:#0f172a; border:1px solid #1e293b; border-radius:16px; padding:24px 20px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,0.65);">
+      <div style="font-size:28px; margin-bottom:8px;">&#128274;</div>
+      <div style="font-size:17px; font-weight:800; color:#f8fafc; margin-bottom:4px;">Deye Smart Energy</div>
+      <div style="font-size:12px; color:#94a3b8; margin-bottom:16px;">Introdu codul PIN de administrator</div>
+      <input type="password" id="appPinGateInput" inputmode="numeric" maxlength="12" placeholder="Cod PIN"
+        onkeydown="if(event.key==='Enter')submitAppPinGate()"
+        style="width:100%; box-sizing:border-box; background:#020617; color:#f8fafc; border:1px solid #334155; border-radius:10px; padding:11px 12px; font-size:16px; text-align:center; letter-spacing:4px; font-weight:700; margin-bottom:12px;">
+      <button type="button" id="appPinGateBtn" onclick="submitAppPinGate()"
+        style="width:100%; background:#0284c7; border:none; color:#ffffff; border-radius:10px; padding:11px; font-size:14px; font-weight:700; cursor:pointer;">Deblocheaz&#x103;</button>
+      <div id="appPinGateMsg" style="font-size:12px; color:#f87171; margin-top:10px; min-height:16px;"></div>
+    </div>
+  </div>
+  <script>
+    if (localStorage.getItem("deye_local_pin")) {
+      document.getElementById("appPinGate").style.display = "none";
+    }
+  </script>
   <div class="app-shell">
     <!-- Top Header -->
     <header class="topbar">
@@ -1268,7 +1288,8 @@
         </button>
 
         <!-- Central Double Nested Rounded-Square Core (clickable -> Detalii Invertor) -->
-        <button type="button" class="inverter-core" id="inverterCore" onclick="openView('view-inverter')" style="cursor:pointer;font-family:inherit;color:inherit;" aria-label="Detalii Invertor Deye">
+        <button type="button" class="inverter-core" id="inverterCore" onclick="openView('view-inverter')"
+          style="cursor:pointer;font-family:inherit;color:inherit;" aria-label="Detalii Invertor Deye">
           <div class="inverter-core-inner">
             <div class="inverter-core-name">DEYE</div>
             <div class="inverter-core-meta" id="coreMeta">1F &bull; --&#xB0;C</div>
@@ -1354,17 +1375,25 @@
             onclick="setHistPeriod('total')">Total</button>
         </div>
         <div style="display:flex; align-items:center; width:100%;">
-          <input class="field-inp" id="histDateInp" type="date" aria-label="Selecteaza ziua" onchange="loadHistoryData()" style="width:100%;">
+          <input class="field-inp" id="histDateInp" type="date" aria-label="Selecteaza ziua"
+            onchange="loadHistoryData()" style="width:100%;">
           <div id="histMonthWrap" style="display:none; gap:6px; align-items:center; width:100%;">
-            <select class="field-inp" id="histMonthSel" aria-label="Selecteaza luna" onchange="loadHistoryData()" style="flex:1;min-width:0;"></select>
-            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent" style="padding:8px 12px;">&#8249;</button>
-            <span id="histMonthYrVal" style="font-size:13px;font-weight:800;min-width:42px;text-align:center;">2026</span>
-            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator" style="padding:8px 12px;">&#8250;</button>
+            <select class="field-inp" id="histMonthSel" aria-label="Selecteaza luna" onchange="loadHistoryData()"
+              style="flex:1;min-width:0;"></select>
+            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent"
+              style="padding:8px 12px;">&#8249;</button>
+            <span id="histMonthYrVal"
+              style="font-size:13px;font-weight:800;min-width:42px;text-align:center;">2026</span>
+            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator"
+              style="padding:8px 12px;">&#8250;</button>
           </div>
           <div id="histYearWrap" style="display:none; gap:6px; align-items:center; width:100%;">
-            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent" style="padding:8px 14px;">&#8249;</button>
-            <input class="field-inp" id="histYearInp" type="number" min="2000" max="2099" aria-label="Selecteaza anul" onchange="syncHistYearFromInp()" style="flex:1;text-align:center;font-weight:800;">
-            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator" style="padding:8px 14px;">&#8250;</button>
+            <button type="button" class="back-btn" onclick="stepHistYear(-1)" aria-label="Anul precedent"
+              style="padding:8px 14px;">&#8249;</button>
+            <input class="field-inp" id="histYearInp" type="number" min="2000" max="2099" aria-label="Selecteaza anul"
+              onchange="syncHistYearFromInp()" style="flex:1;text-align:center;font-weight:800;">
+            <button type="button" class="back-btn" onclick="stepHistYear(1)" aria-label="Anul urmator"
+              style="padding:8px 14px;">&#8250;</button>
           </div>
           <span class="switch-desc" id="histTotalLbl" style="display:none;">Cumulat din tot istoricul salvat</span>
         </div>
@@ -1394,7 +1423,8 @@
             <div class="stat-val" id="hDis">-- kWh</div>
           </div>
         </div>
-        <button type="button" class="btn-secondary warn" style="margin-top:10px;" onclick="clearSpiffsHistory()">&#x1F5D1; &#x218;terge Istoric
+        <button type="button" class="btn-secondary warn" style="margin-top:10px;"
+          onclick="clearSpiffsHistory()">&#x1F5D1; &#x218;terge Istoric
           SPIFFS</button>
       </div>
     </section>
@@ -1444,7 +1474,8 @@
               onchange="saveLocalBatCap()">
           </div>
         </div>
-        <div class="switch-desc" style="margin-top:6px;">Valori folosite doar pentru calculul autonomiei (nu modific&#x103; invertorul).</div>
+        <div class="switch-desc" style="margin-top:6px;">Valori folosite doar pentru calculul autonomiei (nu
+          modific&#x103; invertorul).</div>
       </div>
 
       <div class="glass-card">
@@ -1518,8 +1549,10 @@
           <div class="status-note" id="selectedLoggerTxt">Se &#xEE;ncarc&#x103; set&#x103;rile din NVS...</div>
           <div class="scan-box" id="scanBox"></div>
           <input type="hidden" id="cfg-mac">
-          <details style="background:rgba(15,23,42,0.55);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:8px 10px;">
-            <summary style="cursor:pointer;font-size:12px;color:#94a3b8;font-weight:600;">&#9881;&#65039; Configurare manual&#x103; logger (op&#x21B;ional, cazuri extreme)</summary>
+          <details
+            style="background:rgba(15,23,42,0.55);border:1px solid rgba(148,163,184,0.2);border-radius:10px;padding:8px 10px;">
+            <summary style="cursor:pointer;font-size:12px;color:#94a3b8;font-weight:600;">&#9881;&#65039; Configurare
+              manual&#x103; logger (op&#x21B;ional, cazuri extreme)</summary>
             <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
               <div class="field-grp">
                 <label class="field-lbl" for="cfg-ip">IP Logger Solarman</label>
@@ -1558,8 +1591,10 @@
             <input class="field-inp" type="text" id="cfg-tg-chat" placeholder="987654321">
           </div>
           <div class="field-grp">
-            <label class="field-lbl" for="cfg-gemini-key">Cheie API Gemini (Google AI Studio &mdash; mascat&#x103;)</label>
-            <input class="field-inp" type="password" id="cfg-gemini-key" placeholder="AIza... (lasa gol pentru a pastra cheia existenta)" autocomplete="off">
+            <label class="field-lbl" for="cfg-gemini-key">Cheie API Gemini (Google AI Studio &mdash;
+              mascat&#x103;)</label>
+            <input class="field-inp" type="password" id="cfg-gemini-key"
+              placeholder="AIza... (lasa gol pentru a pastra cheia existenta)" autocomplete="off">
             <div id="gemini-key-hint" style="font-size:11px; color:#94a3b8; margin-top:2px;"></div>
           </div>
           <div class="field-grp">
@@ -1570,19 +1605,24 @@
               <option value="gemini-4-hydrogen">Gemini 4 Hydrogen (top Free Tier)</option>
               <option value="__custom__">Alt model (introdu manual)...</option>
             </select>
-            <input class="field-inp" type="text" id="cfg-gemini-model" style="display:none;margin-top:6px;" placeholder="ex: gemini-3-flash-preview">
-            <span class="switch-desc">Dac&#x103; un model este &#xEE;nlocuit de Google, ESP32 trece automat pe noul model activ.</span>
+            <input class="field-inp" type="text" id="cfg-gemini-model" style="display:none;margin-top:6px;"
+              placeholder="ex: gemini-3-flash-preview">
+            <span class="switch-desc">Dac&#x103; un model este &#xEE;nlocuit de Google, ESP32 trece automat pe noul
+              model activ.</span>
           </div>
           <div class="field-grp">
             <label class="field-lbl" for="cfg-w-city">Localitate Meteo (Open-Meteo)</label>
             <div style="display:flex;gap:6px;">
               <input class="field-inp" type="text" id="cfg-w-city" placeholder="ex: Braila" style="flex:1;">
-              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;" onclick="searchWeatherCity()">Caut&#x103;</button>
-              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;" onclick="detectWeatherLocation()" title="Detecteaz&#x103; automat">&#x1F4CD; Auto</button>
+              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;"
+                onclick="searchWeatherCity()">Caut&#x103;</button>
+              <button type="button" class="btn-secondary" style="width:auto;padding:0 12px;white-space:nowrap;"
+                onclick="detectWeatherLocation()" title="Detecteaz&#x103; automat">&#x1F4CD; Auto</button>
             </div>
             <input type="hidden" id="cfg-w-lat" value="0">
             <input type="hidden" id="cfg-w-lon" value="0">
-            <div id="weather-loc-hint" style="font-size:11px;color:#94a3b8;margin-top:3px;">Nicio localitate configurat&#x103;.</div>
+            <div id="weather-loc-hint" style="font-size:11px;color:#94a3b8;margin-top:3px;">Nicio localitate
+              configurat&#x103;.</div>
           </div>
           <div class="row-2">
             <button type="button" class="btn-primary" onclick="saveSettings()">Salveaz&#x103;</button>
@@ -1607,8 +1647,11 @@
         </div>
         <button type="button" class="btn-primary" id="btnGhInstall" style="display:none;"
           onclick="startGithubOta()">Instaleaz&#x103; Actualizarea GitHub</button>
-        <div id="otaProgWrap" style="display:none;background:#091020;border:1px solid #334155;border-radius:999px;height:12px;overflow:hidden;">
-          <div id="otaProgBar" style="width:0%;height:100%;background:linear-gradient(90deg,#0ea5e9,#34d399);transition:width 0.3s ease;"></div>
+        <div id="otaProgWrap"
+          style="display:none;background:#091020;border:1px solid #334155;border-radius:999px;height:12px;overflow:hidden;">
+          <div id="otaProgBar"
+            style="width:0%;height:100%;background:linear-gradient(90deg,#0ea5e9,#34d399);transition:width 0.3s ease;">
+          </div>
         </div>
         <div class="status-note" id="otaNote"></div>
         <a href="/setup" class="btn-secondary" style="text-align:center; text-decoration:none; display:block;">&#x1F4F6;
@@ -1797,17 +1840,23 @@
       <div class="glass-card ai-card-shell">
         <div class="ai-quick-grid">
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('Cum func\u021Bioneaz\u0103 sistemul solar, bateria \u0219i re\u021Beaua chiar acum?')">&#x26A1; Stare sistem acum</button>
+            onclick="askAiPreset('Cum func\u021Bioneaz\u0103 sistemul solar, bateria \u0219i re\u021Beaua chiar acum?')">&#x26A1;
+            Stare sistem acum</button>
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('C\u00E2t va \u021Bine bateria la noapte \u0219i ce autonomie real\u0103 am?')">&#x1F50B; Autonomie la noapte</button>
+            onclick="askAiPreset('C\u00E2t va \u021Bine bateria la noapte \u0219i ce autonomie real\u0103 am?')">&#x1F50B;
+            Autonomie la noapte</button>
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('Analizeaz\u0103 produc\u021Bia solar\u0103, consumul casei \u0219i gradul de independen\u021B\u0103 azi \u0219i luna aceasta.')">&#x2600;&#xFE0F; Analiz&#x103; produc&#x21B;ie azi</button>
+            onclick="askAiPreset('Analizeaz\u0103 produc\u021Bia solar\u0103, consumul casei \u0219i gradul de independen\u021B\u0103 azi \u0219i luna aceasta.')">&#x2600;&#xFE0F;
+            Analiz&#x103; produc&#x21B;ie azi</button>
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('Verific\u0103 tensiunea re\u021Belei (EN 50549-1), temperatura invertorului/bateriei \u0219i set\u0103rile active.')">&#x1F6E1;&#xFE0F; Audit tensiune &amp; set&#x103;ri</button>
+            onclick="askAiPreset('Verific\u0103 tensiunea re\u021Belei (EN 50549-1), temperatura invertorului/bateriei \u0219i set\u0103rile active.')">&#x1F6E1;&#xFE0F;
+            Audit tensiune &amp; set&#x103;ri</button>
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('Estimeaz\u0103 produc\u021Bia solar\u0103 pe urm\u0103toarele 7 zile corel\u00E2nd prognoza meteo Open-Meteo cu istoricul real de produc\u021Bie al invertorului.')">&#x2600;&#xFE0F; Estimare produc&#x21B;ie 7 zile</button>
+            onclick="askAiPreset('Estimeaz\u0103 produc\u021Bia solar\u0103 pe urm\u0103toarele 7 zile corel\u00E2nd prognoza meteo Open-Meteo cu istoricul real de produc\u021Bie al invertorului.')">&#x2600;&#xFE0F;
+            Estimare produc&#x21B;ie 7 zile</button>
           <button type="button" class="ai-chip-btn"
-            onclick="askAiPreset('Care este prognoza meteo pe urm\u0103toarele 7 zile pentru localitatea configurat\u0103?')">&#x1F326;&#xFE0F; Prognoz&#x103; meteo 7 zile</button>
+            onclick="askAiPreset('Care este prognoza meteo pe urm\u0103toarele 7 zile pentru localitatea configurat\u0103?')">&#x1F326;&#xFE0F;
+            Prognoz&#x103; meteo 7 zile</button>
         </div>
 
         <button type="button" class="ai-audit-tg-btn" id="btnAiAuditTg" onclick="runAiAuditTelegram()">
@@ -1826,7 +1875,9 @@
                 <path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9" />
               </svg>
             </div>
-            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie, autonomie sau re&#x21B;ea.</div>
+            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o
+              &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie,
+              autonomie sau re&#x21B;ea.</div>
           </div>
         </div>
 
@@ -1868,6 +1919,99 @@
             <div class="stat-lbl">V&#xE2;rf Azi / Medie Orar&#x103;</div>
             <div class="stat-val" id="dLoadPeak">-- kW</div>
           </div>
+        </div>
+      </div>
+
+      <div class="glass-card" style="margin-top:12px; border-color:rgba(56,189,248,0.3);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; font-weight:800; letter-spacing:0.6px; color:#38bdf8;">CONTROL AER
+            CONDI&#x21A;IONAT</span>
+          <span id="acStatusBadge" style="font-size:11px; font-weight:700; color:#94a3b8;">&#9679; Neconectat</span>
+        </div>
+
+        <div id="acControlBox" style="display:none;">
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
+            <select id="acDeviceSelect" onchange="acSelectDevice()"
+              style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+            <button type="button" onclick="loadAcStatus(true)" title="Actualizeaza"
+              style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:8px 11px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleAcSetup()" title="Credentiale"
+              style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:8px 11px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
+          </div>
+
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px; margin-bottom:10px;">
+            <button type="button" onclick="acStepTemp(-1)"
+              style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">&#8722;</button>
+            <div style="text-align:center;">
+              <div style="font-size:28px; font-weight:800; color:#f8fafc; line-height:1;" id="acTargetTemp">-- &deg;C
+              </div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:4px;" id="acRoomTemp">&#xCE;n camer&#x103;: --
+                &deg;C</div>
+            </div>
+            <button type="button" onclick="acStepTemp(1)"
+              style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">+</button>
+            <button type="button" id="acPowerBtn" onclick="acTogglePower()"
+              style="min-width:64px; height:42px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer;">OFF</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:5px;" id="acModeRow">
+            <button type="button" class="ac-mode-btn" data-mode="cool" onclick="acSetMode('cool')"
+              style="height:44px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">R&#x103;cire</button>
+            <button type="button" class="ac-mode-btn" data-mode="heat" onclick="acSetMode('heat')"
+              style="height:44px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">&#xCE;nc&#x103;lzire</button>
+            <button type="button" class="ac-mode-btn" data-mode="auto" onclick="acSetMode('auto')"
+              style="height:44px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">Auto</button>
+            <button type="button" class="ac-mode-btn" data-mode="dry" onclick="acSetMode('dry')"
+              style="height:44px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12.5px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">Dezumi.</button>
+            <button type="button" id="acFanCycleBtn" onclick="acCycleFan()"
+              style="height:44px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px 3px; font-size:11.5px; line-height:1.15; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;">Ventilare<br>Auto</button>
+          </div>
+        </div>
+
+        <div id="acSetupBox" style="margin-top:8px;">
+          <div style="margin-bottom:8px;">
+            <label style="display:block; font-size:11px; color:#94a3b8; margin-bottom:4px;">Brand Aer
+              Condi&#x21B;ionat</label>
+            <select id="acBrand" onchange="onAcBrandChange()"
+              style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="">-- Selecteaz&#x103; brand AC --</option>
+              <option value="tcl">TCL (Cont TCL Home)</option>
+              <option value="tuya">Tuya / Smart Life (Cloud API)</option>
+            </select>
+          </div>
+
+          <div id="acFieldsTcl" style="display:none; flex-direction:column; gap:7px;">
+            <input type="email" id="acTclEmail" placeholder="E-mail cont TCL Home" autocomplete="username"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="password" id="acTclPass" placeholder="Parol&#x103; TCL Home" autocomplete="current-password"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+          </div>
+
+          <div id="acFieldsTuya" style="display:none; flex-direction:column; gap:7px;">
+            <select id="acTuyaRegion"
+              style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+              <option value="eu">Europa (openapi.tuyaeu.com)</option>
+              <option value="us">America (openapi.tuyaus.com)</option>
+              <option value="cn">China (openapi.tuyacn.com)</option>
+              <option value="in">India (openapi.tuyain.com)</option>
+            </select>
+            <input type="text" id="acTuyaClientId" placeholder="Tuya Access ID (Client ID)"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="password" id="acTuyaSecret" placeholder="Tuya Access Secret"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="text" id="acTuyaDeviceId" placeholder="Tuya Device ID"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+          </div>
+
+          <div id="acActionsRow" style="display:none; gap:8px; margin-top:9px;">
+            <button type="button" onclick="saveAcConfig()"
+              style="flex:1; background:#0284c7; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103;
+              &amp; Salveaz&#x103;</button>
+            <button type="button" id="acDisconnectBtn" onclick="disconnectAc()"
+              style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Deconecteaz&#x103;</button>
+          </div>
+          <div id="acMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
         </div>
       </div>
     </section>
@@ -2042,6 +2186,12 @@
       }
       if (viewId === "view-live") {
         drawEnergyChart("miniChart", false);
+      }
+      if (viewId === "view-load") {
+        loadAcStatus(true);
+        startAcPolling();
+      } else {
+        stopAcPolling();
       }
       window.scrollTo({ top: 0, behavior: "instant" });
     }
@@ -2826,6 +2976,7 @@
         gPollFails = 0;
         gPinRequired = !!json.pin_required;
         gPinLockedSec = Number(json.pin_locked_sec || 0);
+        handleAppPinGate();
         const d = json.data || {};
         updateWifiBars(d.wifi_connected !== false, d.wifi_rssi || 0, !!d.wifi_eco, d.wifi_tx_dbm || 20, d.cpu_mhz || 240);
         updateHeaderMetrics(d);
@@ -3134,7 +3285,7 @@
             updateWeatherLocHint(label, j.latitude, j.longitude);
             return true;
           }
-        } catch {}
+        } catch { }
         return false;
       };
       if (navigator.geolocation && window.isSecureContext) {
@@ -3146,7 +3297,7 @@
               const gr = await fetch("https://get.geojs.io/v1/ip/geo.json");
               const gj = await gr.json();
               if (gj && gj.city) label = [gj.city, gj.country_code].filter(Boolean).join(", ");
-            } catch {}
+            } catch { }
             document.getElementById("cfg-w-city").value = label;
             document.getElementById("cfg-w-lat").value = la;
             document.getElementById("cfg-w-lon").value = lo;
@@ -3267,7 +3418,7 @@
 
     function stopAiRequest() {
       if (gAiAbortCtrl) {
-        try { gAiAbortCtrl.abort(); } catch {}
+        try { gAiAbortCtrl.abort(); } catch { }
       }
     }
 
@@ -3472,7 +3623,7 @@
       };
       xhr.onload = () => {
         let j = {};
-        try { j = JSON.parse(xhr.responseText || "{}"); } catch {}
+        try { j = JSON.parse(xhr.responseText || "{}"); } catch { }
         if (xhr.status >= 200 && xhr.status < 300 && j.ok) {
           if (pBar) pBar.style.width = "100%";
           note.style.color = "#34d399";
@@ -3559,6 +3710,307 @@
       }, 450);
     }
 
+    function handleAppPinGate() {
+      const gate = document.getElementById("appPinGate");
+      if (!gate) return;
+      if (!gPinRequired) {
+        gate.style.display = "none";
+        return;
+      }
+      const saved = gSessionPin || localStorage.getItem("deye_local_pin") || "";
+      if (saved) {
+        gate.style.display = "none";
+      } else {
+        gate.style.display = "flex";
+        const msg = document.getElementById("appPinGateMsg");
+        if (gPinLockedSec > 0 && msg) {
+          msg.textContent = "Acces blocat! Mai asteapta " + Math.max(1, Math.ceil(gPinLockedSec / 60)) + " min.";
+        }
+      }
+    }
+
+    async function submitAppPinGate() {
+      const inp = document.getElementById("appPinGateInput");
+      const msg = document.getElementById("appPinGateMsg");
+      const btn = document.getElementById("appPinGateBtn");
+      const pin = (inp.value || "").trim();
+      if (!pin) { msg.textContent = "Introdu codul PIN."; return; }
+      btn.disabled = true;
+      msg.textContent = "";
+      try {
+        const res = await fetch("/api/pin/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          gSessionPin = pin;
+          localStorage.setItem("deye_local_pin", pin);
+          inp.value = "";
+          document.getElementById("appPinGate").style.display = "none";
+          if (gCurrentView === "view-load") loadAcStatus(true);
+        } else {
+          msg.textContent = data.error || "PIN gresit!";
+        }
+      } catch {
+        msg.textContent = "Eroare de conexiune cu ESP32.";
+      }
+      btn.disabled = false;
+    }
+
+    let gAcState = { power: false, target_temp: 23, current_temp: null, mode: "cool", fan_speed: 0, fan_max: 7 };
+    let gAcLoaded = false;
+    let gAcTempTimer = null;
+    let gAcFanTimer = null;
+    let gAcPollTimer = null;
+    let gAcPollInFlight = false;
+    let gAcLastCmdTs = 0;
+
+    function startAcPolling() {
+      stopAcPolling();
+      gAcPollTimer = setInterval(() => {
+        if (gCurrentView !== "view-load" || document.hidden) return;
+        if (Date.now() - gAcLastCmdTs < 2500) return;
+        loadAcStatus(true, true);
+      }, 3000);
+    }
+
+    function stopAcPolling() {
+      if (gAcPollTimer) { clearInterval(gAcPollTimer); gAcPollTimer = null; }
+    }
+
+    function onAcBrandChange() {
+      const b = document.getElementById("acBrand").value;
+      document.getElementById("acFieldsTcl").style.display = b === "tcl" ? "flex" : "none";
+      document.getElementById("acFieldsTuya").style.display = b === "tuya" ? "flex" : "none";
+      document.getElementById("acActionsRow").style.display = b ? "flex" : "none";
+    }
+
+    function toggleAcSetup() {
+      const box = document.getElementById("acSetupBox");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    function renderAcFanControls() {
+      const btn = document.getElementById("acFanCycleBtn");
+      if (!btn) return;
+      const curFan = Number(gAcState.fan_speed || 0);
+      if (gAcState.power) {
+        btn.style.background = "#0369a1";
+        btn.style.borderColor = "#38bdf8";
+        btn.style.color = "#ffffff";
+      } else {
+        btn.style.background = "#0f172a";
+        btn.style.borderColor = "#334155";
+        btn.style.color = "#94a3b8";
+      }
+      if (curFan <= 0) {
+        btn.innerHTML = "Ventilare<br>Auto";
+      } else {
+        let barsHtml = '<span style="display:inline-flex; align-items:flex-end; gap:2px; height:12px;">';
+        for (let i = 1; i <= curFan; i++) {
+          const h = 3 + i * 1.3;
+          barsHtml += `<span style="display:inline-block; width:3px; height:${h.toFixed(1)}px; border-radius:1px; background:${gAcState.power ? "#38bdf8" : "#64748b"};"></span>`;
+        }
+        barsHtml += "</span>";
+        btn.innerHTML = "<span>Ventilare</span>" + barsHtml;
+      }
+    }
+
+    function applyAcUiFromState() {
+      const pBtn = document.getElementById("acPowerBtn");
+      document.getElementById("acTargetTemp").innerHTML = (gAcState.target_temp ?? "--") + " &deg;C";
+      const curT = (gAcState.current_temp !== null && gAcState.current_temp !== undefined && gAcState.current_temp >= 0)
+        ? gAcState.current_temp + " &deg;C" : "-- &deg;C";
+      document.getElementById("acRoomTemp").innerHTML = "\u00CEn camer\u0103: " + curT;
+
+      if (gAcState.power) {
+        pBtn.textContent = "ON";
+        pBtn.style.background = "#059669";
+        pBtn.style.borderColor = "#34d399";
+        pBtn.style.color = "#ffffff";
+      } else {
+        pBtn.textContent = "OFF";
+        pBtn.style.background = "#1e293b";
+        pBtn.style.borderColor = "#475569";
+        pBtn.style.color = "#94a3b8";
+      }
+      document.querySelectorAll(".ac-mode-btn").forEach(btn => {
+        const active = btn.dataset.mode === gAcState.mode && gAcState.power;
+        btn.style.background = active ? "#0284c7" : "#0f172a";
+        btn.style.borderColor = active ? "#38bdf8" : "#334155";
+        btn.style.color = active ? "#ffffff" : "#94a3b8";
+      });
+      renderAcFanControls();
+    }
+
+    function renderAcState(data) {
+      const badge = document.getElementById("acStatusBadge");
+      const ctrlBox = document.getElementById("acControlBox");
+      const setupBox = document.getElementById("acSetupBox");
+      const discBtn = document.getElementById("acDisconnectBtn");
+      const msgEl = document.getElementById("acMsg");
+
+      if (data.brand) {
+        document.getElementById("acBrand").value = data.brand;
+        onAcBrandChange();
+      }
+      if (data.tcl_email) document.getElementById("acTclEmail").value = data.tcl_email;
+      if (data.tcl_password_set) document.getElementById("acTclPass").placeholder = "Parol\u0103 salvat\u0103 (las\u0103 gol pentru a p\u0103stra)";
+      if (data.tuya_region) document.getElementById("acTuyaRegion").value = data.tuya_region;
+      if (data.tuya_client_id) document.getElementById("acTuyaClientId").value = data.tuya_client_id;
+      if (data.tuya_secret_set) document.getElementById("acTuyaSecret").placeholder = "Secret salvat (las\u0103 gol pentru a p\u0103stra)";
+      if (data.tuya_device_id) document.getElementById("acTuyaDeviceId").value = data.tuya_device_id;
+      discBtn.style.display = data.brand ? "inline-block" : "none";
+
+      const devs = Array.isArray(data.devices) ? data.devices : [];
+      const sel = document.getElementById("acDeviceSelect");
+      sel.innerHTML = "";
+      devs.forEach(d => {
+        const opt = document.createElement("option");
+        opt.value = d.id;
+        opt.textContent = d.name;
+        if (d.id === data.selected_device_id) opt.selected = true;
+        sel.appendChild(opt);
+      });
+
+      if (data.connected && data.state) {
+        gAcState = Object.assign({ power: false, target_temp: 23, current_temp: null, mode: "cool", fan_speed: 0, fan_max: 7 }, data.state);
+        badge.innerHTML = "&#9679; Conectat";
+        badge.style.color = "#34d399";
+        ctrlBox.style.display = "block";
+        setupBox.style.display = "none";
+        applyAcUiFromState();
+      } else {
+        badge.innerHTML = data.error ? "&#9679; Eroare" : "&#9679; Neconectat";
+        badge.style.color = data.error ? "#f87171" : "#94a3b8";
+        ctrlBox.style.display = devs.length > 0 ? "block" : "none";
+        if (data.error) { msgEl.textContent = data.error; msgEl.style.color = "#f87171"; }
+      }
+    }
+
+    function getAcPinHdr() {
+      const p = gSessionPin || localStorage.getItem("deye_local_pin") || "";
+      return p ? { "X-Admin-Pin": p } : {};
+    }
+
+    async function loadAcStatus(force, isBgPoll) {
+      if (gAcLoaded && !force) return;
+      if (isBgPoll && gAcPollInFlight) return;
+      if (isBgPoll) gAcPollInFlight = true;
+      try {
+        const res = await fetch("/api/ac/status", { headers: getAcPinHdr() });
+        if (res.status === 401) {
+          localStorage.removeItem("deye_local_pin"); gSessionPin = ""; handleAppPinGate(); return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isBgPoll && Date.now() - gAcLastCmdTs < 2500) return;
+        gAcLoaded = true;
+        renderAcState(data);
+      } catch { }
+      finally { if (isBgPoll) gAcPollInFlight = false; }
+    }
+
+    async function saveAcConfig() {
+      const msgEl = document.getElementById("acMsg");
+      const brand = document.getElementById("acBrand").value;
+      if (!brand) { msgEl.textContent = "Selecteaz\u0103 mai \u00EEnt\u00E2i brandul."; msgEl.style.color = "#f87171"; return; }
+      msgEl.textContent = "Se conecteaz\u0103 la cont...";
+      msgEl.style.color = "#38bdf8";
+      const payload = { brand };
+      if (brand === "tcl") {
+        payload.tcl_email = document.getElementById("acTclEmail").value.trim();
+        payload.tcl_password = document.getElementById("acTclPass").value;
+      } else if (brand === "tuya") {
+        payload.tuya_region = document.getElementById("acTuyaRegion").value;
+        payload.tuya_client_id = document.getElementById("acTuyaClientId").value.trim();
+        payload.tuya_client_secret = document.getElementById("acTuyaSecret").value.trim();
+        payload.tuya_device_id = document.getElementById("acTuyaDeviceId").value.trim();
+      }
+      try {
+        const hdrs = Object.assign({ "Content-Type": "application/json" }, getAcPinHdr());
+        const res = await fetch("/api/ac/config", { method: "POST", headers: hdrs, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.ok) {
+          msgEl.textContent = "Conectat cu succes!"; msgEl.style.color = "#34d399";
+          gAcLoaded = true; renderAcState(data);
+        } else {
+          msgEl.textContent = data.error || "Conectare e\u0219uat\u0103."; msgEl.style.color = "#f87171";
+        }
+      } catch {
+        msgEl.textContent = "Eroare de conexiune cu ESP32."; msgEl.style.color = "#f87171";
+      }
+    }
+
+    async function disconnectAc() {
+      const msgEl = document.getElementById("acMsg");
+      try {
+        const hdrs = Object.assign({ "Content-Type": "application/json" }, getAcPinHdr());
+        await fetch("/api/ac/config", { method: "POST", headers: hdrs, body: JSON.stringify({ disconnect: true }) });
+        document.getElementById("acBrand").value = "";
+        document.getElementById("acTclPass").value = "";
+        document.getElementById("acTuyaSecret").value = "";
+        onAcBrandChange();
+        document.getElementById("acControlBox").style.display = "none";
+        document.getElementById("acSetupBox").style.display = "block";
+        document.getElementById("acDisconnectBtn").style.display = "none";
+        document.getElementById("acStatusBadge").innerHTML = "&#9679; Neconectat";
+        document.getElementById("acStatusBadge").style.color = "#94a3b8";
+        msgEl.textContent = "Deconectat."; msgEl.style.color = "#94a3b8";
+      } catch { }
+    }
+
+    function acSelectDevice() {
+      const did = document.getElementById("acDeviceSelect").value;
+      if (did) acSendControl({ device_id: did });
+    }
+    function acTogglePower() {
+      gAcState.power = !gAcState.power; applyAcUiFromState(); acSendControl({ power: gAcState.power });
+    }
+    function acStepTemp(delta) {
+      const cur = Number(gAcState.target_temp || 23);
+      gAcState.target_temp = Math.max(16, Math.min(31, cur + delta));
+      applyAcUiFromState();
+      clearTimeout(gAcTempTimer);
+      gAcTempTimer = setTimeout(() => acSendControl({ target_temp: gAcState.target_temp }), 250);
+    }
+    function acSetMode(mode) {
+      gAcState.mode = mode; gAcState.power = true; applyAcUiFromState(); acSendControl({ mode: mode, power: true });
+    }
+    function acCycleFan() {
+      const fanMax = Math.max(3, Number(gAcState.fan_max || 7));
+      gAcState.fan_speed = (Number(gAcState.fan_speed || 0) + 1) % (fanMax + 1);
+      gAcState.power = true;
+      applyAcUiFromState();
+      clearTimeout(gAcFanTimer);
+      gAcFanTimer = setTimeout(() => acSendControl({ fan_speed: gAcState.fan_speed, power: true }), 250);
+    }
+
+    async function acSendControl(cmd) {
+      gAcLastCmdTs = Date.now();
+      const did = document.getElementById("acDeviceSelect").value;
+      if (did && !cmd.device_id) cmd.device_id = did;
+      try {
+        const hdrs = Object.assign({ "Content-Type": "application/json" }, getAcPinHdr());
+        const res = await fetch("/api/ac/control", { method: "POST", headers: hdrs, body: JSON.stringify(cmd) });
+        const data = await res.json();
+        if (data.ok && data.state) {
+          renderAcState({
+            connected: true,
+            state: data.state,
+            devices: Array.from(document.getElementById("acDeviceSelect").options).map(o => ({ id: o.value, name: o.textContent })),
+            selected_device_id: did
+          });
+        } else if (!data.ok && data.error) {
+          const msgEl = document.getElementById("acMsg");
+          msgEl.textContent = data.error; msgEl.style.color = "#f87171";
+          document.getElementById("acSetupBox").style.display = "block";
+        }
+      } catch { }
+    }
+
     setInterval(pollServer, 2000);
     setInterval(loadChartData, 20000);
     window.addEventListener("resize", () => { drawEnergyChart("miniChart", false); if (gCurrentView === "view-history") drawEnergyChart("fullChart", true); });
@@ -3568,7 +4020,7 @@
     pollServer();
     loadChartData();
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js").catch(() => { });
     }
   </script>
 </body>
