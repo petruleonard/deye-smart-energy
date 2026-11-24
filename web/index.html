@@ -3765,11 +3765,12 @@
     let gAcPollInFlight = false;
     let gAcLastCmdTs = 0;
     let gAcSetupManual = false;
+    let gAcActiveBrand = "";
 
     function startAcPolling() {
       stopAcPolling();
       gAcPollTimer = setInterval(() => {
-        if (gCurrentView !== "view-load" || document.hidden || gAcSetupManual) return;
+        if (gCurrentView !== "view-load" || document.hidden || gAcSetupManual || gAcActiveBrand === "tuya") return;
         const ae = document.activeElement;
         if (ae && (ae.id === "acDeviceSelect" || ae.id === "acBrand")) return;
         if (Date.now() - gAcLastCmdTs < 2500) return;
@@ -3849,6 +3850,8 @@
     }
 
     function renderAcState(data) {
+      if (data.brand) gAcActiveBrand = data.brand;
+      else if (data.connected === false) gAcActiveBrand = "";
       const badge = document.getElementById("acStatusBadge");
       const ctrlBox = document.getElementById("acControlBox");
       const setupBox = document.getElementById("acSetupBox");
