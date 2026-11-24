@@ -1875,9 +1875,7 @@
                 <path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9" />
               </svg>
             </div>
-            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o
-              &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie,
-              autonomie sau re&#x21B;ea.</div>
+            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie, autonomie sau re&#x21B;ea.</div>
           </div>
         </div>
 
@@ -2691,12 +2689,12 @@
           const pR = rel(pv), gR = rel(gr), bR = rel(ba), lR = rel(lo), cR = rel(co);
 
           const d = gLastTel || {};
-          const pvOn = Number(d.pv_power_w || 0) > 25;
+          const pvOn = Number(d.pv_power_w || 0) > 0;
           const grW = Number(d.grid_power_w || 0);
-          const grOn = Math.abs(grW) > 25;
+          const grOn = Math.abs(grW) > 0;
           const baW = Number(d.battery_power_w || 0);
-          const baOn = Math.abs(baW) > 25;
-          const loOn = Number(d.load_power_w || 0) > 25;
+          const baOn = Math.abs(baW) > 0;
+          const loOn = Number(d.load_power_w || 0) > 0;
 
           const out = [];
           const baseT = flowPhase / 100;

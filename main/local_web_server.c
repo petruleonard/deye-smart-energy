@@ -1680,7 +1680,7 @@ static bool gemini_discover_flash_model(const char *api_key, char *out_model, si
             if (end && (size_t)(end - p) < out_sz) {
                 char cand[48] = {0};
                 memcpy(cand, p, (size_t)(end - p));
-                if (strstr(cand, "flash") && !strstr(cand, "image") && !strstr(cand, "tts") && !strstr(cand, "audio") && !strstr(cand, "2.0") && !strstr(cand, "1.5")) {
+                if (strstr(cand, "flash") && !strstr(cand, "image") && !strstr(cand, "tts") && !strstr(cand, "audio") && !strstr(cand, "thinking") && !strstr(cand, "2.5") && !strstr(cand, "2.0") && !strstr(cand, "1.5") && !strstr(cand, "1.0")) {
                     if (strstr(cand, "gemini-3")) {
                         strncpy(out_model, cand, out_sz - 1);
                         out_model[out_sz - 1] = '\0';
@@ -1855,9 +1855,9 @@ static bool gemini_call_with_fallback(const char *full_prompt,
     const char *candidates[5] = {
         pref,
         "gemini-flash-lite-latest",
+        "gemini-3.5-flash-lite",
         "gemini-3.8-flash",
-        "gemini-4-hydrogen",
-        "gemini-flash-latest"
+        "gemini-4-hydrogen"
     };
 
     for (int i = 0; i < 5; i++) {
