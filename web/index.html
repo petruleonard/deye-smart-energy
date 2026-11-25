@@ -2385,20 +2385,9 @@
 
     // Back-button / Android edge-sweep guard:
     // On secondary screens -> returns to Live dashboard; on Live screen -> exits app naturally.
-    (() => {
-      const h = (location.hash || "").replace(/^#/, "");
-      let sv = h;
-      if (!sv) { try { sv = sessionStorage.getItem("deye_cur_view") || ""; } catch (_) {} }
-      if (sv && sv !== "view-live" && document.getElementById(sv)) {
-        try {
-          history.replaceState({ view: "view-live" }, "", "#view-live");
-          history.pushState({ view: sv }, "", "#" + sv);
-        } catch (_) {}
-        openView(sv, true);
-      } else if (history && history.replaceState) {
-        history.replaceState({ view: "view-live" }, "", "#view-live");
-      }
-    })();
+    if (history && history.replaceState) {
+      history.replaceState({ view: "view-live" }, "", "#view-live");
+    }
     window.addEventListener("popstate", (e) => {
       const v = e.state && e.state.view ? e.state.view : "view-live";
       if (v !== gCurrentView) {
@@ -4607,6 +4596,18 @@
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => { });
     }
+    (() => {
+      const h = (location.hash || "").replace(/^#/, "");
+      let sv = h;
+      if (!sv) { try { sv = sessionStorage.getItem("deye_cur_view") || ""; } catch (_) {} }
+      if (sv && sv !== "view-live" && document.getElementById(sv)) {
+        try {
+          history.replaceState({ view: "view-live" }, "", "#view-live");
+          history.pushState({ view: sv }, "", "#" + sv);
+        } catch (_) {}
+        openView(sv, true);
+      }
+    })();
   </script>
 </body>
 
