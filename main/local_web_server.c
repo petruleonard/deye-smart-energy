@@ -1,5 +1,6 @@
 #include "local_web_server.h"
 #include "ac_control.h"
+#include "tuya_devices.h"
 #include "app_config.h"
 #include "cJSON.h"
 #include "app_settings.h"
@@ -2167,14 +2168,23 @@ static esp_err_t ac_status_get_handler(httpd_req_t *req) {
                             g_settings.ac_tuya_device_id, g_settings.ac_brand,
                             active_brand, sizeof(active_brand));
 
+    char fb_reg[8] = {0}, fb_cid[48] = {0}, fb_sec[64] = {0};
+    if (!g_settings.ac_tuya_client_id[0] || !g_settings.ac_tuya_client_secret[0]) {
+        tuya_devices_get_fallback_creds(fb_reg, sizeof(fb_reg), fb_cid, sizeof(fb_cid), fb_sec, sizeof(fb_sec));
+    }
+    const char *eff_reg = g_settings.ac_tuya_region[0] ? g_settings.ac_tuya_region : (fb_reg[0] ? fb_reg : "eu");
+    const char *eff_cid = g_settings.ac_tuya_client_id[0] ? g_settings.ac_tuya_client_id : fb_cid;
+    const char *eff_sec = g_settings.ac_tuya_client_secret[0] ? g_settings.ac_tuya_client_secret : fb_sec;
+
     cJSON *root = cJSON_CreateObject();
     cJSON_AddBoolToObject(root, "ok", true);
     cJSON_AddStringToObject(root, "brand", active_brand);
     cJSON_AddStringToObject(root, "tcl_email", g_settings.ac_tcl_email);
     cJSON_AddBoolToObject(root, "tcl_password_set", g_settings.ac_tcl_password[0] != '\0');
-    cJSON_AddStringToObject(root, "tuya_region", g_settings.ac_tuya_region[0] ? g_settings.ac_tuya_region : "eu");
-    cJSON_AddStringToObject(root, "tuya_client_id", g_settings.ac_tuya_client_id);
-    cJSON_AddBoolToObject(root, "tuya_secret_set", g_settings.ac_tuya_client_secret[0] != '\0');
+    cJSON_AddStringToObject(root, "tuya_region", eff_reg);
+    cJSON_AddStringToObject(root, "tuya_client_id", eff_cid);
+    cJSON_AddStringToObject(root, "tuya_client_secret", eff_sec);
+    cJSON_AddBoolToObject(root, "tuya_secret_set", eff_sec[0] != '\0');
     cJSON_AddStringToObject(root, "tuya_device_id", g_settings.ac_tuya_device_id);
     cJSON_AddStringToObject(root, "selected_device_id", g_settings.ac_selected_device_id);
 
@@ -2228,7 +2238,7 @@ static esp_err_t ac_config_post_handler(httpd_req_t *req) {
         app_settings_t cfg = g_settings;
         if (strcmp(disc_brand, "tcl") == 0 || strcmp(disc_brand, "tuya") == 0) {
             if (strcmp(disc_brand, "tcl") == 0) cfg.ac_tcl_password[0] = '\0';
-            else { cfg.ac_tuya_client_secret[0] = '\0'; cfg.ac_tuya_device_id[0] = '\0'; }
+            else { cfg.ac_tuya_client_id[0] = '\0'; cfg.ac_tuya_client_secret[0] = '\0'; cfg.ac_tuya_device_id[0] = '\0'; }
             char merged[512] = "[]";
             ac_merge_devices_json(cfg.ac_devices_json, "[]", disc_brand, merged, sizeof(merged));
             strncpy(cfg.ac_devices_json, merged, sizeof(cfg.ac_devices_json) - 1);
@@ -2246,7 +2256,9 @@ static esp_err_t ac_config_post_handler(httpd_req_t *req) {
         } else {
             cfg.ac_brand[0] = '\0';
             cfg.ac_tcl_password[0] = '\0';
+            cfg.ac_tuya_client_id[0] = '\0';
             cfg.ac_tuya_client_secret[0] = '\0';
+            cfg.ac_tuya_device_id[0] = '\0';
             cfg.ac_selected_device_id[0] = '\0';
             strcpy(cfg.ac_devices_json, "[]");
         }
@@ -2388,6 +2400,78 @@ static esp_err_t ac_config_post_handler(httpd_req_t *req) {
     return ESP_OK;
 }
 
+static esp_err_t ac_discover_post_handler(httpd_req_t *req) {
+    if (!check_admin_pin_hdr(req)) return ESP_OK;
+    char body[384] = {0};
+    read_req_body(req, body, sizeof(body));
+    cJSON *in = body[0] ? cJSON_Parse(body) : NULL;
+    char reg[8] = {0}, cid[48] = {0}, sec[64] = {0};
+    tuya_devices_get_fallback_creds(reg, sizeof(reg), cid, sizeof(cid), sec, sizeof(sec));
+    cJSON *rj = in ? cJSON_GetObjectItem(in, "tuya_region") : NULL;
+    cJSON *cj = in ? cJSON_GetObjectItem(in, "tuya_client_id") : NULL;
+    cJSON *sj = in ? cJSON_GetObjectItem(in, "tuya_client_secret") : NULL;
+    if (cJSON_IsString(rj) && rj->valuestring[0]) strncpy(reg, rj->valuestring, sizeof(reg) - 1);
+    if (cJSON_IsString(cj) && cj->valuestring[0]) strncpy(cid, cj->valuestring, sizeof(cid) - 1);
+    if (cJSON_IsString(sj) && sj->valuestring[0]) strncpy(sec, sj->valuestring, sizeof(sec) - 1);
+    if (in) cJSON_Delete(in);
+
+    httpd_resp_set_type(req, "application/json");
+    if (!cid[0] || !sec[0]) {
+        httpd_resp_send(req, "{\"ok\":false,\"error\":\"Introdu Access ID si Access Secret Tuya.\"}", HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    }
+    char devs_json[1024] = "[]", err_buf[128] = {0};
+    if (!ac_tuya_discover_ac(reg, cid, sec, devs_json, sizeof(devs_json), err_buf, sizeof(err_buf))) {
+        cJSON *er = cJSON_CreateObject();
+        cJSON_AddBoolToObject(er, "ok", false);
+        cJSON_AddStringToObject(er, "error", err_buf[0] ? err_buf : "Eroare cautare AC");
+        char *out = cJSON_PrintUnformatted(er); cJSON_Delete(er);
+        httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN); free(out);
+        return ESP_OK;
+    }
+    cJSON *res = cJSON_CreateObject();
+    cJSON_AddBoolToObject(res, "ok", true);
+    cJSON_AddItemToObject(res, "devices", cJSON_Parse(devs_json));
+    cJSON_AddStringToObject(res, "tuya_region", reg);
+    cJSON_AddStringToObject(res, "tuya_client_id", cid);
+    cJSON_AddStringToObject(res, "tuya_client_secret", sec);
+    char *out = cJSON_PrintUnformatted(res); cJSON_Delete(res);
+    httpd_resp_send(req, out, HTTPD_RESP_USE_STRLEN); free(out);
+    return ESP_OK;
+}
+
+static esp_err_t td_send_json_str(httpd_req_t *req, char *out) {
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_send(req, out ? out : "{\"ok\":false}", HTTPD_RESP_USE_STRLEN);
+    free(out);
+    return ESP_OK;
+}
+
+static esp_err_t td_post_common(httpd_req_t *req, tuya_dev_kind_t kind, int action) {
+    if (!check_admin_pin_hdr(req)) return ESP_OK;
+    char body[768] = {0};
+    read_req_body(req, body, sizeof(body));
+    char *out = NULL;
+    if (action == 1) out = tuya_dev_discover_json(kind, body);
+    else if (action == 2) out = tuya_dev_config_json(kind, body);
+    else out = tuya_dev_control_json(kind, body);
+    return td_send_json_str(req, out);
+}
+
+static esp_err_t tuya_dehum_status_get_handler(httpd_req_t *req)   { return check_admin_pin_hdr(req) ? td_send_json_str(req, tuya_dev_status_json(TUYA_KIND_DEHUM)) : ESP_OK; }
+static esp_err_t tuya_sensors_status_get_handler(httpd_req_t *req) { return check_admin_pin_hdr(req) ? td_send_json_str(req, tuya_dev_status_json(TUYA_KIND_SENSOR)) : ESP_OK; }
+static esp_err_t tuya_plug_status_get_handler(httpd_req_t *req)    { return check_admin_pin_hdr(req) ? td_send_json_str(req, tuya_dev_status_json(TUYA_KIND_PLUG)) : ESP_OK; }
+static esp_err_t tuya_dehum_discover_post_handler(httpd_req_t *r)  { return td_post_common(r, TUYA_KIND_DEHUM, 1); }
+static esp_err_t tuya_dehum_config_post_handler(httpd_req_t *r)    { return td_post_common(r, TUYA_KIND_DEHUM, 2); }
+static esp_err_t tuya_dehum_control_post_handler(httpd_req_t *r)   { return td_post_common(r, TUYA_KIND_DEHUM, 3); }
+static esp_err_t tuya_sensors_discover_post_handler(httpd_req_t *r){ return td_post_common(r, TUYA_KIND_SENSOR, 1); }
+static esp_err_t tuya_sensors_config_post_handler(httpd_req_t *r)  { return td_post_common(r, TUYA_KIND_SENSOR, 2); }
+static esp_err_t tuya_sensors_control_post_handler(httpd_req_t *r) { return td_post_common(r, TUYA_KIND_SENSOR, 3); }
+static esp_err_t tuya_plug_discover_post_handler(httpd_req_t *r)   { return td_post_common(r, TUYA_KIND_PLUG, 1); }
+static esp_err_t tuya_plug_config_post_handler(httpd_req_t *r)     { return td_post_common(r, TUYA_KIND_PLUG, 2); }
+static esp_err_t tuya_plug_control_post_handler(httpd_req_t *r)    { return td_post_common(r, TUYA_KIND_PLUG, 3); }
+
 static esp_err_t ac_control_post_handler(httpd_req_t *req) {
     if (!check_admin_pin_hdr(req)) return ESP_OK;
 
@@ -2499,7 +2583,7 @@ static esp_err_t icon_512_get_handler(httpd_req_t *req) {
 
 esp_err_t local_web_server_init(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.max_uri_handlers = 36;
+    config.max_uri_handlers = 48;
     config.max_open_sockets = 8;
     config.backlog_conn = 8;
     config.lru_purge_enable = true;
@@ -2535,6 +2619,19 @@ esp_err_t local_web_server_init(void) {
         { .uri = "/api/ac/status",         .method = HTTP_GET,  .handler = ac_status_get_handler },
         { .uri = "/api/ac/config",         .method = HTTP_POST, .handler = ac_config_post_handler },
         { .uri = "/api/ac/control",        .method = HTTP_POST, .handler = ac_control_post_handler },
+        { .uri = "/api/ac/discover",       .method = HTTP_POST, .handler = ac_discover_post_handler },
+        { .uri = "/api/dehum/status",      .method = HTTP_GET,  .handler = tuya_dehum_status_get_handler },
+        { .uri = "/api/dehum/discover",    .method = HTTP_POST, .handler = tuya_dehum_discover_post_handler },
+        { .uri = "/api/dehum/config",      .method = HTTP_POST, .handler = tuya_dehum_config_post_handler },
+        { .uri = "/api/dehum/control",     .method = HTTP_POST, .handler = tuya_dehum_control_post_handler },
+        { .uri = "/api/sensors/status",    .method = HTTP_GET,  .handler = tuya_sensors_status_get_handler },
+        { .uri = "/api/sensors/discover",  .method = HTTP_POST, .handler = tuya_sensors_discover_post_handler },
+        { .uri = "/api/sensors/config",    .method = HTTP_POST, .handler = tuya_sensors_config_post_handler },
+        { .uri = "/api/sensors/control",   .method = HTTP_POST, .handler = tuya_sensors_control_post_handler },
+        { .uri = "/api/plug/status",       .method = HTTP_GET,  .handler = tuya_plug_status_get_handler },
+        { .uri = "/api/plug/discover",     .method = HTTP_POST, .handler = tuya_plug_discover_post_handler },
+        { .uri = "/api/plug/config",       .method = HTTP_POST, .handler = tuya_plug_config_post_handler },
+        { .uri = "/api/plug/control",      .method = HTTP_POST, .handler = tuya_plug_control_post_handler },
         { .uri = "/api/telegram/test",     .method = HTTP_POST, .handler = telegram_test_post_handler },
         { .uri = "/api/logger/scan",       .method = HTTP_GET,  .handler = logger_scan_get_handler },
         { .uri = "/api/logger/scan/status",.method = HTTP_GET,  .handler = logger_scan_status_get_handler },

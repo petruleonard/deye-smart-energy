@@ -12,6 +12,7 @@ idf_component_register(
         "local_web_server.c"
         "telegram_notify.c"
         "ac_control.c"
+        "tuya_devices.c"
     INCLUDE_DIRS
         "."
     EMBED_TXTFILES

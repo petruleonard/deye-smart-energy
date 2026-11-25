@@ -564,6 +564,122 @@ bool ac_control_connect_tcl(const char *email, const char *password,
     return true;
 }
 
+static bool tuya_get_token(const char *region, const char *cid, const char *sec, bool force, char *err_buf, size_t err_sz);
+static int tuya_signed_req(const char *region, const char *cid, const char *sec,
+                           esp_http_client_method_t method, const char *path_with_q, const char *body,
+                           char *resp_buf, size_t resp_sz);
+
+bool ac_tuya_get_token(const char *region, const char *cid, const char *sec, bool force, char *err_buf, size_t err_sz) {
+    return tuya_get_token(region, cid, sec, force, err_buf, err_sz);
+}
+
+int ac_tuya_signed_req(const char *region, const char *cid, const char *sec,
+                       int method, const char *path_with_q, const char *body,
+                       char *resp_buf, size_t resp_sz) {
+    return tuya_signed_req(region, cid, sec, (esp_http_client_method_t)method, path_with_q, body, resp_buf, resp_sz);
+}
+
+bool ac_tuya_discover_ac(const char *region, const char *cid, const char *sec,
+                         char *out_devices_json, size_t out_sz,
+                         char *err_buf, size_t err_sz) {
+    ac_control_init();
+    xSemaphoreTake(s_ac_mutex, portMAX_DELAY);
+    if (!tuya_get_token(region, cid, sec, false, err_buf, err_sz)) {
+        xSemaphoreGive(s_ac_mutex);
+        return false;
+    }
+    char *resp = malloc(8192);
+    if (!resp) {
+        snprintf(err_buf, err_sz, "Memorie insuficienta");
+        xSemaphoreGive(s_ac_mutex);
+        return false;
+    }
+    int code = tuya_signed_req(region, cid, sec, HTTP_METHOD_GET, "/v1.0/iot-01/associated-users/devices", NULL, resp, 8192);
+    cJSON *j = cJSON_Parse(resp);
+    free(resp);
+    if (code != 200 || !j || !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+        cJSON *m = j ? cJSON_GetObjectItem(j, "msg") : NULL;
+        snprintf(err_buf, err_sz, "%s", cJSON_IsString(m) ? m->valuestring : "Eroare listare Tuya");
+        if (j) cJSON_Delete(j);
+        xSemaphoreGive(s_ac_mutex);
+        return false;
+    }
+    cJSON *res_obj = cJSON_GetObjectItem(j, "result");
+    cJSON *devs = res_obj ? cJSON_GetObjectItem(res_obj, "devices") : NULL;
+    cJSON *out_arr = cJSON_CreateArray();
+    if (cJSON_IsArray(devs)) {
+        cJSON *d = NULL;
+        cJSON_ArrayForEach(d, devs) {
+            cJSON *id_j = cJSON_GetObjectItem(d, "id");
+            cJSON *cat_j = cJSON_GetObjectItem(d, "category");
+            cJSON *nm_j = cJSON_GetObjectItem(d, "name");
+            if (!cJSON_IsString(id_j) || !id_j->valuestring[0]) continue;
+            const char *did = id_j->valuestring;
+            const char *cat = cJSON_IsString(cat_j) ? cat_j->valuestring : "";
+            const char *dname = (cJSON_IsString(nm_j) && nm_j->valuestring[0]) ? nm_j->valuestring : did;
+            if (strcmp(cat, "wnykq") == 0) {
+                char path[128];
+                snprintf(path, sizeof(path), "/v2.0/infrareds/%s/remotes", did);
+                char *rresp = malloc(4096);
+                if (rresp) {
+                    int rc = tuya_signed_req(region, cid, sec, HTTP_METHOD_GET, path, NULL, rresp, 4096);
+                    cJSON *rj = cJSON_Parse(rresp);
+                    free(rresp);
+                    cJSON *rarr = (rc == 200 && rj && cJSON_IsTrue(cJSON_GetObjectItem(rj, "success"))) ? cJSON_GetObjectItem(rj, "result") : NULL;
+                    if (cJSON_IsArray(rarr)) {
+                        cJSON *r = NULL;
+                        cJSON_ArrayForEach(r, rarr) {
+                            cJSON *rid_j = cJSON_GetObjectItem(r, "remote_id");
+                            if (!cJSON_IsString(rid_j) || !rid_j->valuestring[0]) continue;
+                            cJSON *rcat_j = cJSON_GetObjectItem(r, "category_id");
+                            if (cJSON_IsNumber(rcat_j) && rcat_j->valueint != 0 && rcat_j->valueint != 5) continue;
+                            cJSON *rn_j = cJSON_GetObjectItem(r, "remote_name");
+                            if (!cJSON_IsString(rn_j) || !rn_j->valuestring[0]) rn_j = cJSON_GetObjectItem(r, "brand_name");
+                            char pair_id[64], label[96];
+                            snprintf(pair_id, sizeof(pair_id), "%s:%s", did, rid_j->valuestring);
+                            snprintf(label, sizeof(label), "%s (IR: %s)", (cJSON_IsString(rn_j) && rn_j->valuestring[0]) ? rn_j->valuestring : "AC Tuya", dname);
+                            cJSON *o = cJSON_CreateObject();
+                            cJSON_AddStringToObject(o, "id", pair_id);
+                            cJSON_AddStringToObject(o, "name", label);
+                            cJSON_AddItemToArray(out_arr, o);
+                        }
+                    }
+                    if (rj) cJSON_Delete(rj);
+                }
+            } else if (strcmp(cat, "kt") == 0) {
+                cJSON *o = cJSON_CreateObject();
+                cJSON_AddStringToObject(o, "id", did);
+                cJSON_AddStringToObject(o, "name", dname);
+                cJSON_AddItemToArray(out_arr, o);
+            }
+        }
+    }
+    if (cJSON_GetArraySize(out_arr) == 0 && cJSON_IsArray(devs)) {
+        cJSON *d = NULL;
+        cJSON_ArrayForEach(d, devs) {
+            cJSON *id_j = cJSON_GetObjectItem(d, "id");
+            cJSON *nm_j = cJSON_GetObjectItem(d, "name");
+            if (!cJSON_IsString(id_j) || !id_j->valuestring[0]) continue;
+            cJSON *o = cJSON_CreateObject();
+            cJSON_AddStringToObject(o, "id", id_j->valuestring);
+            cJSON_AddStringToObject(o, "name", (cJSON_IsString(nm_j) && nm_j->valuestring[0]) ? nm_j->valuestring : id_j->valuestring);
+            cJSON_AddItemToArray(out_arr, o);
+        }
+    }
+    cJSON_Delete(j);
+    char *printed = cJSON_PrintUnformatted(out_arr);
+    cJSON_Delete(out_arr);
+    if (printed) {
+        strncpy(out_devices_json, printed, out_sz - 1);
+        out_devices_json[out_sz - 1] = '\0';
+        free(printed);
+    } else {
+        snprintf(out_devices_json, out_sz, "[]");
+    }
+    xSemaphoreGive(s_ac_mutex);
+    return true;
+}
+
 static bool tuya_get_token(const char *region, const char *cid, const char *sec, bool force, char *err_buf, size_t err_sz) {
     time_t now = time(NULL);
     if (!force && s_tuya_sess.valid &&

@@ -46,6 +46,14 @@ bool ac_control_connect_tuya(const char *region, const char *cid, const char *se
 bool ac_control_get_state(ac_state_t *out_state, char *err_buf, size_t err_sz);
 bool ac_control_send_cmd(const ac_cmd_t *cmd, ac_state_t *out_state, char *err_buf, size_t err_sz);
 
+bool ac_tuya_get_token(const char *region, const char *cid, const char *sec, bool force, char *err_buf, size_t err_sz);
+int ac_tuya_signed_req(const char *region, const char *cid, const char *sec,
+                       int method, const char *path_with_q, const char *body,
+                       char *resp_buf, size_t resp_sz);
+bool ac_tuya_discover_ac(const char *region, const char *cid, const char *sec,
+                         char *out_devices_json, size_t out_sz,
+                         char *err_buf, size_t err_sz);
+
 #ifdef __cplusplus
 }
 #endif

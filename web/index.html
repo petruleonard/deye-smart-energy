@@ -1939,7 +1939,7 @@
 
           <div
             style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px; margin-bottom:10px;">
-            <button type="button" onclick="acStepTemp(-1)"
+            <button type="button" id="acTempMinus" onclick="acStepTemp(-1)"
               style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">&#8722;</button>
             <div style="text-align:center;">
               <div style="font-size:28px; font-weight:800; color:#f8fafc; line-height:1;" id="acTargetTemp">-- &deg;C
@@ -1947,7 +1947,7 @@
               <div style="font-size:11px; color:#94a3b8; margin-top:4px;" id="acRoomTemp">&#xCE;n camer&#x103;: --
                 &deg;C</div>
             </div>
-            <button type="button" onclick="acStepTemp(1)"
+            <button type="button" id="acTempPlus" onclick="acStepTemp(1)"
               style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">+</button>
             <button type="button" id="acPowerBtn" onclick="acTogglePower()"
               style="min-width:64px; height:42px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer;">OFF</button>
@@ -1996,9 +1996,13 @@
             </select>
             <input type="text" id="acTuyaClientId" placeholder="Tuya Access ID (Client ID)"
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <input type="password" id="acTuyaSecret" placeholder="Tuya Access Secret"
+            <input type="text" id="acTuyaSecret" placeholder="Tuya Access Secret"
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <input type="text" id="acTuyaDeviceId" placeholder="Tuya Device ID"
+            <button type="button" onclick="discoverAcTuya()" style="width:100%; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
+            <div id="acTuyaDiscRow" style="display:none;">
+              <select id="acTuyaDiscSelect" onchange="onAcTuyaDiscSelect()" style="width:100%; background:#0f172a; color:#38bdf8; border:1px solid #38bdf8; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+            </div>
+            <input type="text" id="acTuyaDeviceId" placeholder="Tuya Device ID (se completeaz&#x103; automat la c&#x103;utare)"
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
           </div>
 
@@ -2010,6 +2014,181 @@
               style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Deconecteaz&#x103;</button>
           </div>
           <div id="acMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
+        </div>
+      </div>
+
+      <div class="glass-card" style="border-color:rgba(16,185,129,0.35);">
+        <div class="autonomy-head">
+          <span class="autonomy-title" style="color:#38bdf8;">CONTROL DEZUMIDIFICATOR</span>
+          <span id="dehumStatusBadge" style="font-size:11px; font-weight:700; color:#94a3b8;">&#9679; Neconectat</span>
+        </div>
+        <div id="dehumControlBox" style="display:none; margin-top:8px;">
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
+            <select id="dehumDeviceSelect" onchange="dehumSelectDevice()" style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
+            <button type="button" id="dehumConnSwitchBtn" onclick="dehumToggleConnMode()" title="Comut&#x103; LAN / Cloud" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
+            <button type="button" onclick="loadDehumStatus(true)" title="Actualizeaz&#x103;" style="background:#0f172a; border:1px solid #334155; color:#34d399; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleDehumSetup()" title="Set&#x103;ri" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px; margin-bottom:10px;">
+            <button type="button" id="dehumHumMinus" onclick="dehumStepHum(-5)" style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">&#8722;</button>
+            <div style="text-align:center;">
+              <div style="font-size:28px; font-weight:800; color:#f8fafc; line-height:1;" id="dehumTargetHum">-- %</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:4px;" id="dehumRoomHum">&#xCE;n camer&#x103;: -- %</div>
+            </div>
+            <button type="button" id="dehumHumPlus" onclick="dehumStepHum(5)" style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">+</button>
+            <button type="button" id="dehumPowerBtn" onclick="dehumTogglePower()" style="min-width:64px; height:42px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer;">OFF</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;" id="dehumModeRow">
+            <button type="button" class="dehum-mode-btn" data-mode="dehumidify" onclick="dehumSetMode('dehumidify')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Dezumid.</button>
+            <button type="button" class="dehum-mode-btn" data-mode="drying" onclick="dehumSetMode('drying')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Uscare</button>
+            <button type="button" class="dehum-mode-btn" data-mode="cleaning" onclick="dehumSetMode('cleaning')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Continuu</button>
+            <button type="button" id="dehumAnionBtn" onclick="dehumToggleAnion()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Ionizare</button>
+            <button type="button" id="dehumLockBtn" onclick="dehumToggleLock()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Blocare</button>
+            <button type="button" id="dehumFanBtn" onclick="dehumCycleFan()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Vent. Low</button>
+          </div>
+        </div>
+        <div id="dehumSetupBox" style="margin-top:8px; display:none;">
+          <button type="button" onclick="discoverDehum()" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
+          <div id="dehumDiscRow" style="display:none; margin-bottom:8px;"><select id="dehumDiscSelect" onchange="onDehumDiscSelect()" style="width:100%; background:#0f172a; color:#34d399; border:1px solid #34d399; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <input type="text" id="dehumName" placeholder="Nume aparat (ex: Dezumidificator EVOAIR)" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="dehumConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="auto">Auto (Local LAN cu fallback Cloud)</option>
+              <option value="lan">Doar Local LAN (Tuya Port 6668)</option>
+              <option value="cloud">Doar Tuya Cloud API</option>
+            </select>
+            <input type="text" id="dehumDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="dehumIp" placeholder="IP Local (op&#x21B;ional, auto pe LAN)" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="dehumVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  </select>
+                </div>
+                <input type="text" id="dehumLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="dehumTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option><option value="eu">Europa (openapi.tuyaeu.com)</option><option value="us">America (openapi.tuyaus.com)</option><option value="cn">China (openapi.tuyacn.com)</option><option value="in">India (openapi.tuyain.com)</option>
+                </select>
+                <input type="text" id="dehumTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="dehumTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+              </div>
+            </details>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:9px;">
+            <button type="button" onclick="saveDehumConfig()" style="flex:1; background:#059669; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
+            <button type="button" id="dehumDisconnectBtn" onclick="disconnectDehum()" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+          </div>
+          <div id="dehumMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
+        </div>
+        <div id="dehumCollapsedInit" style="margin-top:8px;">
+          <button type="button" onclick="toggleDehumSetup(true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; dezumidificator</button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="border-color:rgba(251,191,36,0.35);">
+        <div class="autonomy-head">
+          <span class="autonomy-title" style="color:#fbbf24;">SENZORI TEMPERATUR&#x102; &amp; UMIDITATE</span>
+          <span style="display:flex; gap:6px;">
+            <button type="button" onclick="loadSensorsStatus()" style="background:#0f172a; border:1px solid #334155; color:#fbbf24; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleTuyaDevSetup('sensor')" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#9881;</button>
+          </span>
+        </div>
+        <div id="sensorList" style="display:flex; flex-direction:column; gap:7px; margin-top:8px;"></div>
+        <div id="sensorSetupBox" style="margin-top:8px; display:none;">
+          <button type="button" onclick="discoverTuyaDev('sensor')" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
+          <div id="sensorDiscRow" style="display:none; margin-bottom:8px;"><select id="sensorDiscSelect" onchange="onTuyaDiscSelect('sensor')" style="width:100%; background:#0f172a; color:#fbbf24; border:1px solid #fbbf24; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <input type="text" id="sensorName" placeholder="Nume senzor" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="sensorConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="auto">Auto (Local LAN cu fallback Cloud)</option><option value="lan">Doar Local LAN (Tuya Port 6668)</option><option value="cloud">Doar Tuya Cloud API</option>
+            </select>
+            <input type="text" id="sensorDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="sensorIp" placeholder="IP Local" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="sensorVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  </select>
+                </div>
+                <input type="text" id="sensorLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="sensorTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option><option value="eu">Europa</option><option value="us">America</option><option value="cn">China</option><option value="in">India</option>
+                </select>
+                <input type="text" id="sensorTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="sensorTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+              </div>
+            </details>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:9px;">
+            <button type="button" onclick="saveTuyaDevConfig('sensor')" style="flex:1; background:#d97706; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
+            <button type="button" id="sensorDisconnectBtn" onclick="disconnectTuyaDev('sensor')" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+          </div>
+          <div id="sensorMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
+        </div>
+        <div id="sensorCollapsedInit" style="margin-top:8px;">
+          <button type="button" onclick="toggleTuyaDevSetup('sensor', true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; termometru</button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="border-color:rgba(168,85,247,0.35);">
+        <div class="autonomy-head">
+          <span class="autonomy-title" style="color:#c084fc;">CONTROL PRIZ&#x102; SMART</span>
+          <span id="plugStatusBadge" style="font-size:11px; font-weight:700; color:#94a3b8;">&#9679; Neconectat</span>
+        </div>
+        <div id="plugControlBox" style="display:none; margin-top:8px;">
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
+            <select id="plugDeviceSelect" onchange="plugSelectDevice()" style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
+            <button type="button" id="plugConnSwitchBtn" onclick="plugToggleConnMode()" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
+            <button type="button" onclick="loadPlugStatus()" style="background:#0f172a; border:1px solid #334155; color:#c084fc; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleTuyaDevSetup('plug')" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px;">
+            <div>
+              <div style="font-size:26px; font-weight:800; color:#f8fafc; line-height:1;" id="plugWatts">-- W</div>
+              <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;" id="plugMetrics">-- V &#8226; -- mA</div>
+            </div>
+            <button type="button" id="plugPowerBtn" onclick="plugTogglePower()" style="min-width:74px; height:44px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:14px; font-weight:800; cursor:pointer;">OFF</button>
+          </div>
+        </div>
+        <div id="plugSetupBox" style="margin-top:8px; display:none;">
+          <button type="button" onclick="discoverTuyaDev('plug')" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
+          <div id="plugDiscRow" style="display:none; margin-bottom:8px;"><select id="plugDiscSelect" onchange="onTuyaDiscSelect('plug')" style="width:100%; background:#0f172a; color:#c084fc; border:1px solid #c084fc; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <input type="text" id="plugName" placeholder="Nume priz&#x103;" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="plugConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="auto">Auto (Local LAN cu fallback Cloud)</option><option value="lan">Doar Local LAN (Tuya Port 6668)</option><option value="cloud">Doar Tuya Cloud API</option>
+            </select>
+            <input type="text" id="plugDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="plugIp" placeholder="IP Local" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="plugVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  </select>
+                </div>
+                <input type="text" id="plugLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="plugTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option><option value="eu">Europa</option><option value="us">America</option><option value="cn">China</option><option value="in">India</option>
+                </select>
+                <input type="text" id="plugTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="plugTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+              </div>
+            </details>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:9px;">
+            <button type="button" onclick="saveTuyaDevConfig('plug')" style="flex:1; background:#9333ea; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
+            <button type="button" id="plugDisconnectBtn" onclick="disconnectTuyaDev('plug')" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+          </div>
+          <div id="plugMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
+        </div>
+        <div id="plugCollapsedInit" style="margin-top:8px;">
+          <button type="button" onclick="toggleTuyaDevSetup('plug', true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; priz&#x103; smart</button>
         </div>
       </div>
     </section>
@@ -2187,9 +2366,18 @@
       }
       if (viewId === "view-load") {
         loadAcStatus(true);
+        loadDehumStatus(true);
+        loadSensorsStatus();
+        loadPlugStatus();
         startAcPolling();
+        startDehumPolling();
+        startSensorsPolling();
+        startPlugPolling();
       } else {
         stopAcPolling();
+        stopDehumPolling();
+        stopSensorsPolling();
+        stopPlugPolling();
       }
       window.scrollTo({ top: 0, behavior: "instant" });
     }
@@ -3840,13 +4028,29 @@
         pBtn.style.borderColor = "#475569";
         pBtn.style.color = "#94a3b8";
       }
+      const pwr = !!gAcState.power;
+      [document.getElementById("acTempMinus"), document.getElementById("acTempPlus")].forEach(b => {
+        if (!b) return;
+        b.disabled = !pwr;
+        b.style.opacity = pwr ? "1" : "0.45";
+        b.style.cursor = pwr ? "pointer" : "not-allowed";
+      });
       document.querySelectorAll(".ac-mode-btn").forEach(btn => {
-        const active = btn.dataset.mode === gAcState.mode && gAcState.power;
+        const active = btn.dataset.mode === gAcState.mode && pwr;
+        btn.disabled = !pwr;
         btn.style.background = active ? "#0284c7" : "#0f172a";
         btn.style.borderColor = active ? "#38bdf8" : "#334155";
         btn.style.color = active ? "#ffffff" : "#94a3b8";
+        btn.style.opacity = pwr ? "1" : "0.5";
+        btn.style.cursor = pwr ? "pointer" : "not-allowed";
       });
       renderAcFanControls();
+      const fBtn = document.getElementById("acFanCycleBtn");
+      if (fBtn) {
+        fBtn.disabled = !pwr;
+        fBtn.style.opacity = pwr ? "1" : "0.5";
+        fBtn.style.cursor = pwr ? "pointer" : "not-allowed";
+      }
     }
 
     function renderAcState(data) {
@@ -3867,7 +4071,7 @@
         if (data.tcl_password_set) document.getElementById("acTclPass").placeholder = "Parol\u0103 salvat\u0103 (las\u0103 gol pentru a p\u0103stra)";
         if (data.tuya_region) document.getElementById("acTuyaRegion").value = data.tuya_region;
         if (data.tuya_client_id) document.getElementById("acTuyaClientId").value = data.tuya_client_id;
-        if (data.tuya_secret_set) document.getElementById("acTuyaSecret").placeholder = "Secret salvat (las\u0103 gol pentru a p\u0103stra)";
+        if (data.tuya_client_secret) document.getElementById("acTuyaSecret").value = data.tuya_client_secret;
         if (data.tuya_device_id) document.getElementById("acTuyaDeviceId").value = data.tuya_device_id;
       }
       discBtn.style.display = data.brand ? "inline-block" : "none";
@@ -3966,11 +4170,18 @@
         const res = await fetch("/api/ac/config", { method: "POST", headers: hdrs, body: JSON.stringify({ disconnect: true, brand }) });
         const data = await res.json();
         if (brand === "tcl") document.getElementById("acTclPass").value = "";
-        else if (brand === "tuya") document.getElementById("acTuyaSecret").value = "";
-        else {
+        else if (brand === "tuya") {
+          document.getElementById("acTuyaClientId").value = "";
+          document.getElementById("acTuyaSecret").value = "";
+          document.getElementById("acTuyaDeviceId").value = "";
+          document.getElementById("acTuyaDiscRow").style.display = "none";
+        } else {
           document.getElementById("acBrand").value = "";
           document.getElementById("acTclPass").value = "";
+          document.getElementById("acTuyaClientId").value = "";
           document.getElementById("acTuyaSecret").value = "";
+          document.getElementById("acTuyaDeviceId").value = "";
+          document.getElementById("acTuyaDiscRow").style.display = "none";
         }
         gAcSetupManual = false;
         renderAcState(data);
@@ -3993,7 +4204,42 @@
     function acTogglePower() {
       gAcState.power = !gAcState.power; applyAcUiFromState(); acSendControl({ power: gAcState.power });
     }
+    function onAcTuyaDiscSelect() {
+      const val = document.getElementById("acTuyaDiscSelect").value;
+      if (val) document.getElementById("acTuyaDeviceId").value = val;
+    }
+
+    async function discoverAcTuya() {
+      const msgEl = document.getElementById("acMsg");
+      msgEl.textContent = "Se caut\u0103 AC-uri \u00EEn Tuya Cloud..."; msgEl.style.color = "#38bdf8";
+      try {
+        const hdrs = Object.assign({ "Content-Type": "application/json" }, getAcPinHdr());
+        const res = await fetch("/api/ac/discover", {
+          method: "POST", headers: hdrs,
+          body: JSON.stringify({
+            tuya_region: document.getElementById("acTuyaRegion").value,
+            tuya_client_id: document.getElementById("acTuyaClientId").value.trim(),
+            tuya_client_secret: document.getElementById("acTuyaSecret").value.trim()
+          })
+        });
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.devices) || !data.devices.length) {
+          msgEl.textContent = data.error || "Nu s-au g\u0103sit aparate AC \u00EEn Tuya."; msgEl.style.color = "#f87171"; return;
+        }
+        if (data.tuya_region) document.getElementById("acTuyaRegion").value = data.tuya_region;
+        if (data.tuya_client_id) document.getElementById("acTuyaClientId").value = data.tuya_client_id;
+        if (data.tuya_client_secret) document.getElementById("acTuyaSecret").value = data.tuya_client_secret;
+        const sel = document.getElementById("acTuyaDiscSelect");
+        sel.innerHTML = "";
+        data.devices.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.name; sel.appendChild(o); });
+        document.getElementById("acTuyaDiscRow").style.display = "block";
+        document.getElementById("acTuyaDeviceId").value = data.devices[0].id;
+        msgEl.textContent = "G\u0103sit! Apas\u0103 Conecteaz\u0103 & Salveaz\u0103."; msgEl.style.color = "#34d399";
+      } catch { msgEl.textContent = "Eroare la c\u0103utarea AC \u00EEn Tuya."; msgEl.style.color = "#f87171"; }
+    }
+
     function acStepTemp(delta) {
+      if (!gAcState.power) return;
       const cur = Number(gAcState.target_temp || 23);
       gAcState.target_temp = Math.max(16, Math.min(31, cur + delta));
       applyAcUiFromState();
@@ -4001,15 +4247,16 @@
       gAcTempTimer = setTimeout(() => acSendControl({ target_temp: gAcState.target_temp }), 250);
     }
     function acSetMode(mode) {
-      gAcState.mode = mode; gAcState.power = true; applyAcUiFromState(); acSendControl({ mode: mode, power: true });
+      if (!gAcState.power) return;
+      gAcState.mode = mode; applyAcUiFromState(); acSendControl({ mode: mode });
     }
     function acCycleFan() {
+      if (!gAcState.power) return;
       const fanMax = Math.max(3, Number(gAcState.fan_max || 7));
       gAcState.fan_speed = (Number(gAcState.fan_speed || 0) + 1) % (fanMax + 1);
-      gAcState.power = true;
       applyAcUiFromState();
       clearTimeout(gAcFanTimer);
-      gAcFanTimer = setTimeout(() => acSendControl({ fan_speed: gAcState.fan_speed, power: true }), 250);
+      gAcFanTimer = setTimeout(() => acSendControl({ fan_speed: gAcState.fan_speed }), 250);
     }
 
     async function acSendControl(cmd) {
@@ -4034,6 +4281,307 @@
         }
       } catch { }
     }
+
+    let gDehumState = { power: false, target_humidity: 50, current_humidity: null, mode: "dehumidify", fan_speed: "1", anion: false, child_lock: false };
+    let gDehumHumTimer = null, gDehumSetupManual = false, gDehumDevices = [], gDehumDiscList = [], gDehumConnMode = "auto", gDehumPollTimer = null, gDehumLastCmdTs = 0;
+
+    function startDehumPolling() {
+      stopDehumPolling();
+      gDehumPollTimer = setInterval(() => {
+        if (gCurrentView !== "view-load" || document.hidden || gDehumSetupManual || gDehumConnMode !== "lan") return;
+        if (Date.now() - gDehumLastCmdTs < 2500) return;
+        loadDehumStatus(true);
+      }, 3000);
+    }
+    function stopDehumPolling() { if (gDehumPollTimer) { clearInterval(gDehumPollTimer); gDehumPollTimer = null; } }
+    function toggleDehumSetup(forceOpen) {
+      const box = document.getElementById("dehumSetupBox"), initBox = document.getElementById("dehumCollapsedInit");
+      const show = (forceOpen === true) ? true : (box.style.display === "none");
+      gDehumSetupManual = show; box.style.display = show ? "block" : "none";
+      if (initBox && show) initBox.style.display = "none";
+      else if (initBox && !gDehumDevices.length && !show) initBox.style.display = "block";
+    }
+    function applyDehumUiFromState() {
+      const st = gDehumState || {}, pwr = !!st.power, modeStr = String(st.mode || "dehumidify").toLowerCase();
+      const humLocked = (modeStr === "drying" || modeStr === "cleaning" || modeStr === "continuous");
+      const curHumTxt = (st.current_humidity !== null && st.current_humidity !== undefined) ? (st.current_humidity + " %") : "-- %";
+      [document.getElementById("dehumHumMinus"), document.getElementById("dehumHumPlus")].forEach(b => {
+        if (!b) return;
+        b.style.visibility = humLocked ? "hidden" : "visible"; b.disabled = !pwr || humLocked;
+        b.style.opacity = pwr ? "1" : "0.45"; b.style.cursor = pwr ? "pointer" : "not-allowed";
+      });
+      document.getElementById("dehumTargetHum").textContent = humLocked ? "30 %" : ((st.target_humidity ?? "--") + " %");
+      document.getElementById("dehumRoomHum").textContent = "\u00CEn camer\u0103: " + curHumTxt;
+      const pBtn = document.getElementById("dehumPowerBtn");
+      pBtn.textContent = pwr ? "ON" : "OFF"; pBtn.style.background = pwr ? "#10b981" : "#1e293b";
+      pBtn.style.borderColor = pwr ? "#34d399" : "#475569"; pBtn.style.color = pwr ? "#ffffff" : "#94a3b8";
+      document.querySelectorAll(".dehum-mode-btn").forEach(btn => {
+        const active = pwr && (btn.getAttribute("data-mode") === modeStr);
+        btn.disabled = !pwr; btn.style.background = active ? "#059669" : "#0f172a";
+        btn.style.borderColor = active ? "#34d399" : "#334155"; btn.style.color = active ? "#ffffff" : "#94a3b8";
+        btn.style.opacity = pwr ? "1" : "0.5"; btn.style.cursor = pwr ? "pointer" : "not-allowed";
+      });
+      const aBtn = document.getElementById("dehumAnionBtn"), aOn = pwr && !!st.anion;
+      aBtn.disabled = !pwr; aBtn.style.background = aOn ? "#0284c7" : "#0f172a"; aBtn.style.borderColor = aOn ? "#38bdf8" : "#334155";
+      aBtn.style.color = aOn ? "#ffffff" : "#94a3b8"; aBtn.style.opacity = pwr ? "1" : "0.5"; aBtn.style.cursor = pwr ? "pointer" : "not-allowed";
+      const lBtn = document.getElementById("dehumLockBtn"), lOn = pwr && !!st.child_lock;
+      lBtn.disabled = !pwr; lBtn.style.background = lOn ? "#d97706" : "#0f172a"; lBtn.style.borderColor = lOn ? "#fbbf24" : "#334155";
+      lBtn.style.color = lOn ? "#ffffff" : "#94a3b8"; lBtn.style.opacity = pwr ? "1" : "0.5"; lBtn.style.cursor = pwr ? "pointer" : "not-allowed";
+      const fBtn = document.getElementById("dehumFanBtn"), isDry = (modeStr === "drying");
+      const fs = isDry ? "2" : String(st.fan_speed || "1");
+      fBtn.textContent = (fs === "2" || fs === "high") ? "Vent. High" : "Vent. Low";
+      fBtn.disabled = !pwr || isDry; fBtn.style.background = pwr ? "#0284c7" : "#0f172a";
+      fBtn.style.borderColor = pwr ? "#38bdf8" : "#334155"; fBtn.style.color = pwr ? "#ffffff" : "#94a3b8";
+      fBtn.style.opacity = !pwr ? "0.5" : (isDry ? "0.85" : "1"); fBtn.style.cursor = (!pwr || isDry) ? "not-allowed" : "pointer";
+    }
+    function renderDehumState(data) {
+      const badge = document.getElementById("dehumStatusBadge"), ctrlBox = document.getElementById("dehumControlBox"), setupBox = document.getElementById("dehumSetupBox"), initBox = document.getElementById("dehumCollapsedInit"), discBtn = document.getElementById("dehumDisconnectBtn"), msgEl = document.getElementById("dehumMsg");
+      const devs = Array.isArray(data.devices) ? data.devices : []; gDehumDevices = devs;
+      const sel = document.getElementById("dehumDeviceSelect"), devKey = devs.map(d => d.id + ":" + d.name).join("|");
+      if (sel.dataset.devKey !== devKey) {
+        sel.dataset.devKey = devKey; sel.innerHTML = "";
+        devs.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.name || d.id; sel.appendChild(o); });
+      }
+      if (data.selected_device_id && sel.value !== data.selected_device_id) sel.value = data.selected_device_id;
+      const cur = devs.find(d => d.id === (data.selected_device_id || sel.value)) || devs[0];
+      if (!gDehumSetupManual && cur) {
+        document.getElementById("dehumName").value = cur.name || ""; document.getElementById("dehumConnMode").value = cur.conn_mode || "auto";
+        document.getElementById("dehumDeviceId").value = cur.id || ""; document.getElementById("dehumIp").value = cur.ip || "";
+        document.getElementById("dehumVer").value = cur.version || "auto"; document.getElementById("dehumLocalKey").value = cur.local_key || "";
+        document.getElementById("dehumTuyaRegion").value = cur.tuya_region || data.tuya_default_region || "eu";
+        document.getElementById("dehumTuyaClientId").value = cur.tuya_client_id || data.tuya_default_client_id || "";
+        document.getElementById("dehumTuyaSecret").value = cur.tuya_client_secret || data.tuya_default_client_secret || "";
+      }
+      if (!document.getElementById("dehumTuyaRegion").value && data.tuya_default_region) document.getElementById("dehumTuyaRegion").value = data.tuya_default_region;
+      if (!document.getElementById("dehumTuyaClientId").value && data.tuya_default_client_id) document.getElementById("dehumTuyaClientId").value = data.tuya_default_client_id;
+      if (!document.getElementById("dehumTuyaSecret").value && data.tuya_default_client_secret) document.getElementById("dehumTuyaSecret").value = data.tuya_default_client_secret;
+      discBtn.style.display = devs.length ? "inline-block" : "none";
+      gDehumConnMode = data.conn_mode || (cur && cur.conn_mode) || "auto";
+      const swBtn = document.getElementById("dehumConnSwitchBtn");
+      if (swBtn) {
+        swBtn.textContent = gDehumConnMode === "lan" ? "LAN" : (gDehumConnMode === "cloud" ? "CLOUD" : "AUTO");
+        swBtn.style.borderColor = gDehumConnMode === "lan" ? "#34d399" : (gDehumConnMode === "cloud" ? "#38bdf8" : "#64748b");
+        swBtn.style.color = gDehumConnMode === "lan" ? "#34d399" : (gDehumConnMode === "cloud" ? "#38bdf8" : "#cbd5e1");
+      }
+      if (data.connected && data.state) {
+        badge.innerHTML = "&#9679; Conectat" + (data.conn_used ? (" (" + data.conn_used.toUpperCase() + ")") : ""); badge.style.color = "#34d399";
+        ctrlBox.style.display = "block"; if (initBox) initBox.style.display = "none"; if (!gDehumSetupManual) setupBox.style.display = "none";
+        gDehumState = Object.assign({}, gDehumState, data.state); applyDehumUiFromState(); msgEl.textContent = "";
+      } else {
+        badge.innerHTML = "&#9679; Neconectat"; badge.style.color = "#94a3b8";
+        ctrlBox.style.display = devs.length ? "block" : "none";
+        if (initBox) initBox.style.display = (!devs.length && !gDehumSetupManual) ? "block" : "none";
+        if (data.error) { msgEl.textContent = data.error; msgEl.style.color = "#f87171"; }
+      }
+    }
+    async function loadDehumStatus() {
+      try {
+        const res = await fetch("/api/dehum/status", { headers: getAcPinHdr() });
+        if (!res.ok) return;
+        const data = await res.json(); if (data.ok) renderDehumState(data);
+      } catch { }
+    }
+    function applyDehumDiscChoice(d) {
+      if (!d) return;
+      document.getElementById("dehumName").value = d.name || ""; document.getElementById("dehumDeviceId").value = d.id || "";
+      if (d.local_key) document.getElementById("dehumLocalKey").value = d.local_key;
+      if (d.ip) document.getElementById("dehumIp").value = d.ip;
+      if (d.version) document.getElementById("dehumVer").value = d.version;
+    }
+    function onDehumDiscSelect() { applyDehumDiscChoice(gDehumDiscList[Number(document.getElementById("dehumDiscSelect").value || 0)]); }
+    async function discoverDehum() {
+      const msgEl = document.getElementById("dehumMsg"); msgEl.textContent = "Se caut\u0103..."; msgEl.style.color = "#38bdf8";
+      try {
+        const res = await fetch("/api/dehum/discover", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ tuya_region: document.getElementById("dehumTuyaRegion").value, tuya_client_id: document.getElementById("dehumTuyaClientId").value.trim(), tuya_client_secret: document.getElementById("dehumTuyaSecret").value.trim() }) });
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.devices) || !data.devices.length) { msgEl.textContent = data.error || "Nu s-au g\u0103sit."; msgEl.style.color = "#f87171"; return; }
+        gDehumDiscList = data.devices;
+        if (data.tuya_region) document.getElementById("dehumTuyaRegion").value = data.tuya_region;
+        if (data.tuya_client_id) document.getElementById("dehumTuyaClientId").value = data.tuya_client_id;
+        if (data.tuya_client_secret) document.getElementById("dehumTuyaSecret").value = data.tuya_client_secret;
+        const sel = document.getElementById("dehumDiscSelect"); sel.innerHTML = "";
+        data.devices.forEach((d, i) => { const o = document.createElement("option"); o.value = String(i); o.textContent = d.name + (d.ip ? (" — LAN " + d.ip) : " — Cloud"); sel.appendChild(o); });
+        document.getElementById("dehumDiscRow").style.display = "block"; applyDehumDiscChoice(data.devices[0]);
+        msgEl.textContent = "G\u0103sit! Apas\u0103 Conecteaz\u0103 & Salveaz\u0103."; msgEl.style.color = "#34d399";
+      } catch { msgEl.textContent = "Eroare la c\u0103utare."; msgEl.style.color = "#f87171"; }
+    }
+    async function saveDehumConfig() {
+      const msgEl = document.getElementById("dehumMsg"); msgEl.textContent = "Se conecteaz\u0103..."; msgEl.style.color = "#34d399";
+      try {
+        const res = await fetch("/api/dehum/config", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ name: document.getElementById("dehumName").value.trim(), conn_mode: document.getElementById("dehumConnMode").value, device_id: document.getElementById("dehumDeviceId").value.trim(), ip: document.getElementById("dehumIp").value.trim(), version: document.getElementById("dehumVer").value, local_key: document.getElementById("dehumLocalKey").value.trim(), tuya_region: document.getElementById("dehumTuyaRegion").value, tuya_client_id: document.getElementById("dehumTuyaClientId").value.trim(), tuya_client_secret: document.getElementById("dehumTuyaSecret").value.trim() }) });
+        const data = await res.json();
+        if (data.ok) { msgEl.textContent = "Conectat!"; msgEl.style.color = "#34d399"; gDehumSetupManual = false; renderDehumState(data); }
+        else { msgEl.textContent = data.error || "Conectare e\u0219uat\u0103."; msgEl.style.color = "#f87171"; }
+      } catch { msgEl.textContent = "Eroare conexiune ESP32."; msgEl.style.color = "#f87171"; }
+    }
+    async function disconnectDehum() {
+      const did = document.getElementById("dehumDeviceId").value.trim() || document.getElementById("dehumDeviceSelect").value;
+      try {
+        const res = await fetch("/api/dehum/config", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ disconnect: true, device_id: did }) });
+        const data = await res.json(); gDehumSetupManual = false; renderDehumState(data);
+      } catch { }
+    }
+    function dehumSelectDevice() { const did = document.getElementById("dehumDeviceSelect").value; if (did) dehumSendControl({ device_id: did }); }
+    function dehumToggleConnMode() { gDehumConnMode = (gDehumConnMode === "lan") ? "cloud" : "lan"; dehumSendControl({ conn_mode: gDehumConnMode }); }
+    function dehumTogglePower() { gDehumState.power = !gDehumState.power; applyDehumUiFromState(); dehumSendControl({ power: gDehumState.power }); }
+    function dehumStepHum(delta) {
+      if (!gDehumState.power) return;
+      const m = String(gDehumState.mode || "dehumidify").toLowerCase();
+      if (m === "drying" || m === "cleaning" || m === "continuous") return;
+      gDehumState.target_humidity = Math.max(30, Math.min(80, Number(gDehumState.target_humidity || 50) + delta));
+      applyDehumUiFromState(); clearTimeout(gDehumHumTimer);
+      gDehumHumTimer = setTimeout(() => dehumSendControl({ target_humidity: gDehumState.target_humidity }), 250);
+    }
+    function dehumSetMode(mode) { if (!gDehumState.power) return; gDehumState.mode = mode; if (mode === "drying") gDehumState.fan_speed = "2"; applyDehumUiFromState(); dehumSendControl({ mode: mode }); }
+    function dehumToggleAnion() { if (!gDehumState.power) return; gDehumState.anion = !gDehumState.anion; applyDehumUiFromState(); dehumSendControl({ anion: gDehumState.anion }); }
+    function dehumToggleLock() { if (!gDehumState.power) return; gDehumState.child_lock = !gDehumState.child_lock; applyDehumUiFromState(); dehumSendControl({ child_lock: gDehumState.child_lock }); }
+    function dehumCycleFan() {
+      if (!gDehumState.power || String(gDehumState.mode || "").toLowerCase() === "drying") return;
+      gDehumState.fan_speed = (String(gDehumState.fan_speed || "1") === "1") ? "2" : "1"; applyDehumUiFromState(); dehumSendControl({ fan_speed: gDehumState.fan_speed });
+    }
+    async function dehumSendControl(cmd) {
+      gDehumLastCmdTs = Date.now();
+      const did = document.getElementById("dehumDeviceSelect").value; if (did && !cmd.device_id) cmd.device_id = did;
+      try {
+        const res = await fetch("/api/dehum/control", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify(cmd) });
+        const data = await res.json();
+        if (data.ok && data.state) renderDehumState({ connected: true, conn_mode: data.conn_mode || gDehumConnMode, conn_used: data.conn_used || "", state: data.state, devices: gDehumDevices, selected_device_id: data.selected_device_id || did });
+        else if (!data.ok && data.error) { const m = document.getElementById("dehumMsg"); m.textContent = data.error; m.style.color = "#f87171"; document.getElementById("dehumSetupBox").style.display = "block"; }
+      } catch { }
+    }
+
+    const gTuyaDevState = {
+      sensor: { setupManual: false, devices: [], discList: [], pollTimer: null },
+      plug: { setupManual: false, devices: [], discList: [], pollTimer: null, connMode: "auto", state: { power: false, watts: 0, voltage: 0, current_ma: 0 } }
+    };
+    const _tuyaEp = (k, a) => (k === "sensor" ? "/api/sensors/" : "/api/plug/") + a;
+    function toggleTuyaDevSetup(kind, forceOpen) {
+      const st = gTuyaDevState[kind], box = document.getElementById(kind + "SetupBox"), initBox = document.getElementById(kind + "CollapsedInit");
+      const show = (forceOpen === true) ? true : (box.style.display === "none");
+      st.setupManual = show; box.style.display = show ? "block" : "none";
+      if (initBox && show) initBox.style.display = "none"; else if (initBox && !st.devices.length && !show) initBox.style.display = "block";
+    }
+    function _fillTuyaDevDefaults(kind, data) {
+      if (!document.getElementById(kind + "TuyaRegion").value && data.tuya_default_region) document.getElementById(kind + "TuyaRegion").value = data.tuya_default_region;
+      if (!document.getElementById(kind + "TuyaClientId").value && data.tuya_default_client_id) document.getElementById(kind + "TuyaClientId").value = data.tuya_default_client_id;
+      if (!document.getElementById(kind + "TuyaSecret").value && data.tuya_default_client_secret) document.getElementById(kind + "TuyaSecret").value = data.tuya_default_client_secret;
+    }
+    function _applyTuyaDiscChoice(kind, d) {
+      if (!d) return;
+      document.getElementById(kind + "Name").value = d.name || ""; document.getElementById(kind + "DeviceId").value = d.id || "";
+      if (d.local_key) document.getElementById(kind + "LocalKey").value = d.local_key;
+      if (d.ip) document.getElementById(kind + "Ip").value = d.ip;
+      if (d.version) document.getElementById(kind + "Ver").value = d.version;
+    }
+    function onTuyaDiscSelect(kind) { _applyTuyaDiscChoice(kind, gTuyaDevState[kind].discList[Number(document.getElementById(kind + "DiscSelect").value || 0)]); }
+    async function discoverTuyaDev(kind) {
+      const msgEl = document.getElementById(kind + "Msg"); msgEl.textContent = "Se caut\u0103..."; msgEl.style.color = "#38bdf8";
+      try {
+        const res = await fetch(_tuyaEp(kind, "discover"), { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ tuya_region: document.getElementById(kind + "TuyaRegion").value, tuya_client_id: document.getElementById(kind + "TuyaClientId").value.trim(), tuya_client_secret: document.getElementById(kind + "TuyaSecret").value.trim() }) });
+        const data = await res.json();
+        if (!data.ok || !Array.isArray(data.devices) || !data.devices.length) { msgEl.textContent = data.error || "Nu s-au g\u0103sit."; msgEl.style.color = "#f87171"; return; }
+        gTuyaDevState[kind].discList = data.devices;
+        if (data.tuya_region) document.getElementById(kind + "TuyaRegion").value = data.tuya_region;
+        if (data.tuya_client_id) document.getElementById(kind + "TuyaClientId").value = data.tuya_client_id;
+        if (data.tuya_client_secret) document.getElementById(kind + "TuyaSecret").value = data.tuya_client_secret;
+        const sel = document.getElementById(kind + "DiscSelect"); sel.innerHTML = "";
+        data.devices.forEach((d, i) => { const o = document.createElement("option"); o.value = String(i); o.textContent = d.name + (d.ip ? (" — LAN " + d.ip) : " — Cloud"); sel.appendChild(o); });
+        document.getElementById(kind + "DiscRow").style.display = "block"; _applyTuyaDiscChoice(kind, data.devices[0]);
+        msgEl.textContent = "G\u0103sit! Apas\u0103 Conecteaz\u0103 & Salveaz\u0103."; msgEl.style.color = "#34d399";
+      } catch { msgEl.textContent = "Eroare la c\u0103utare."; msgEl.style.color = "#f87171"; }
+    }
+    async function saveTuyaDevConfig(kind) {
+      const msgEl = document.getElementById(kind + "Msg"); msgEl.textContent = "Se conecteaz\u0103..."; msgEl.style.color = "#38bdf8";
+      try {
+        const res = await fetch(_tuyaEp(kind, "config"), { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ name: document.getElementById(kind + "Name").value.trim(), conn_mode: document.getElementById(kind + "ConnMode").value, device_id: document.getElementById(kind + "DeviceId").value.trim(), ip: document.getElementById(kind + "Ip").value.trim(), version: document.getElementById(kind + "Ver").value, local_key: document.getElementById(kind + "LocalKey").value.trim(), tuya_region: document.getElementById(kind + "TuyaRegion").value, tuya_client_id: document.getElementById(kind + "TuyaClientId").value.trim(), tuya_client_secret: document.getElementById(kind + "TuyaSecret").value.trim() }) });
+        const data = await res.json();
+        if (data.ok) { msgEl.textContent = "Conectat!"; msgEl.style.color = "#34d399"; gTuyaDevState[kind].setupManual = false; if (kind === "sensor") renderSensorsState(data); else renderPlugState(data); }
+        else { msgEl.textContent = data.error || "Conectare e\u0219uat\u0103."; msgEl.style.color = "#f87171"; }
+      } catch { msgEl.textContent = "Eroare conexiune ESP32."; msgEl.style.color = "#f87171"; }
+    }
+    async function disconnectTuyaDev(kind) {
+      const selEl = document.getElementById("plugDeviceSelect");
+      const did = document.getElementById(kind + "DeviceId").value.trim() || (kind === "plug" && selEl ? selEl.value : "");
+      try {
+        const res = await fetch(_tuyaEp(kind, "config"), { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ disconnect: true, device_id: did }) });
+        const data = await res.json();
+        document.getElementById(kind + "DeviceId").value = ""; document.getElementById(kind + "Name").value = "";
+        gTuyaDevState[kind].setupManual = false; if (kind === "sensor") renderSensorsState(data); else renderPlugState(data);
+      } catch { }
+    }
+    function renderSensorsState(data) {
+      const listEl = document.getElementById("sensorList"), setupBox = document.getElementById("sensorSetupBox"), initBox = document.getElementById("sensorCollapsedInit"), discBtn = document.getElementById("sensorDisconnectBtn");
+      const devs = Array.isArray(data.devices) ? data.devices : []; gTuyaDevState.sensor.devices = devs; _fillTuyaDevDefaults("sensor", data);
+      discBtn.style.display = devs.length ? "inline-block" : "none";
+      if (!gTuyaDevState.sensor.setupManual && devs.length) setupBox.style.display = "none";
+      if (initBox) initBox.style.display = (!gTuyaDevState.sensor.setupManual) ? "block" : "none";
+      listEl.innerHTML = "";
+      devs.forEach(d => {
+        const row = document.createElement("div"); row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:10px; padding:9px 11px; gap:8px;";
+        const st = d.state || {}, tTxt = (st.temp !== null && st.temp !== undefined) ? (st.temp.toFixed(1) + " &deg;C") : "-- &deg;C", hTxt = (st.humidity !== null && st.humidity !== undefined) ? (st.humidity + "%") : "--%", bTxt = (st.battery !== null && st.battery !== undefined) ? (" &bull; &#128267;" + st.battery + "%") : "";
+        const cm = d.conn_mode || "auto", cmLabel = cm === "lan" ? "LAN" : (cm === "cloud" ? "CLOUD" : "AUTO"), cmColor = cm === "lan" ? "#34d399" : (cm === "cloud" ? "#38bdf8" : "#cbd5e1");
+        const left = document.createElement("div"); left.style.cssText = "min-width:0; flex:1;";
+        left.innerHTML = `<div style="font-size:12.5px; font-weight:700; color:#e2e8f0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${d.name}</div><div style="font-size:11px; color:${d.connected ? '#94a3b8' : '#f87171'};">${d.connected ? (hTxt + bTxt + (d.conn_used ? ' (' + d.conn_used.toUpperCase() + ')' : '')) : (d.error || 'Neconectat')}</div>`;
+        const right = document.createElement("div"); right.style.cssText = "display:flex; align-items:center; gap:6px;";
+        right.innerHTML = `<span style="font-size:18px; font-weight:800; color:#fbbf24;">${tTxt}</span>`;
+        const sw = document.createElement("button"); sw.type = "button"; sw.textContent = cmLabel; sw.style.cssText = `background:#1e293b; border:1px solid ${cmColor}; color:${cmColor}; border-radius:6px; padding:4px 7px; font-size:10.5px; font-weight:800; cursor:pointer;`;
+        sw.onclick = () => sensorToggleConnMode(d.id, cm);
+        const ed = document.createElement("button"); ed.type = "button"; ed.innerHTML = "&#9998;"; ed.style.cssText = "background:#1e293b; border:1px solid #334155; color:#94a3b8; border-radius:6px; padding:4px 7px; font-size:11px; cursor:pointer;";
+        ed.onclick = () => { document.getElementById("sensorName").value = d.name || ""; document.getElementById("sensorConnMode").value = d.conn_mode || "auto"; document.getElementById("sensorDeviceId").value = d.id || ""; document.getElementById("sensorIp").value = d.ip || ""; document.getElementById("sensorVer").value = d.version || "auto"; document.getElementById("sensorLocalKey").value = d.local_key || ""; toggleTuyaDevSetup("sensor", true); };
+        right.appendChild(sw); right.appendChild(ed); row.appendChild(left); row.appendChild(right); listEl.appendChild(row);
+      });
+    }
+    async function loadSensorsStatus() { try { const r = await fetch("/api/sensors/status", { headers: getAcPinHdr() }); if (r.ok) { const d = await r.json(); if (d.ok) renderSensorsState(d); } } catch { } }
+    async function sensorToggleConnMode(did, cur) { try { const r = await fetch("/api/sensors/control", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify({ device_id: did, conn_mode: cur === "lan" ? "cloud" : "lan" }) }); const d = await r.json(); if (d.ok) renderSensorsState(d); } catch { } }
+    function startSensorsPolling() { stopSensorsPolling(); gTuyaDevState.sensor.pollTimer = setInterval(() => { if (gCurrentView !== "view-load" || document.hidden || gTuyaDevState.sensor.setupManual) return; if (gTuyaDevState.sensor.devices.some(d => (d.conn_mode || "auto") === "lan")) loadSensorsStatus(); }, 3000); }
+    function stopSensorsPolling() { if (gTuyaDevState.sensor.pollTimer) { clearInterval(gTuyaDevState.sensor.pollTimer); gTuyaDevState.sensor.pollTimer = null; } }
+    function applyPlugUiFromState() {
+      const st = gTuyaDevState.plug.state || {}, pwr = !!st.power;
+      document.getElementById("plugWatts").textContent = (st.watts !== undefined && st.watts !== null ? Number(st.watts).toFixed(1) : "--") + " W";
+      document.getElementById("plugMetrics").textContent = (st.voltage !== undefined ? Number(st.voltage).toFixed(1) : "--") + " V \u2022 " + (st.current_ma ?? "--") + " mA";
+      const pBtn = document.getElementById("plugPowerBtn"); pBtn.textContent = pwr ? "ON" : "OFF"; pBtn.style.background = pwr ? "#9333ea" : "#1e293b"; pBtn.style.borderColor = pwr ? "#c084fc" : "#475569"; pBtn.style.color = pwr ? "#ffffff" : "#94a3b8";
+    }
+    function renderPlugState(data) {
+      const badge = document.getElementById("plugStatusBadge"), ctrlBox = document.getElementById("plugControlBox"), setupBox = document.getElementById("plugSetupBox"), initBox = document.getElementById("plugCollapsedInit"), discBtn = document.getElementById("plugDisconnectBtn"), msgEl = document.getElementById("plugMsg");
+      const devs = Array.isArray(data.devices) ? data.devices : []; gTuyaDevState.plug.devices = devs; _fillTuyaDevDefaults("plug", data);
+      const sel = document.getElementById("plugDeviceSelect"), devKey = devs.map(d => d.id + ":" + d.name).join("|");
+      if (sel.dataset.devKey !== devKey) { sel.dataset.devKey = devKey; sel.innerHTML = ""; devs.forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.name || d.id; sel.appendChild(o); }); }
+      if (data.selected_device_id && sel.value !== data.selected_device_id) sel.value = data.selected_device_id;
+      const cur = devs.find(d => d.id === (data.selected_device_id || sel.value)) || devs[0];
+      if (!gTuyaDevState.plug.setupManual && cur) {
+        document.getElementById("plugName").value = cur.name || ""; document.getElementById("plugConnMode").value = cur.conn_mode || "auto";
+        document.getElementById("plugDeviceId").value = cur.id || ""; document.getElementById("plugIp").value = cur.ip || "";
+        document.getElementById("plugVer").value = cur.version || "auto"; document.getElementById("plugLocalKey").value = cur.local_key || "";
+      }
+      discBtn.style.display = devs.length ? "inline-block" : "none";
+      const cm = data.conn_mode || (cur && cur.conn_mode) || "auto"; gTuyaDevState.plug.connMode = cm;
+      const swBtn = document.getElementById("plugConnSwitchBtn");
+      if (swBtn) { swBtn.textContent = cm === "lan" ? "LAN" : (cm === "cloud" ? "CLOUD" : "AUTO"); swBtn.style.borderColor = cm === "lan" ? "#34d399" : (cm === "cloud" ? "#38bdf8" : "#64748b"); swBtn.style.color = cm === "lan" ? "#34d399" : (cm === "cloud" ? "#38bdf8" : "#cbd5e1"); }
+      if (data.connected && data.state) {
+        badge.innerHTML = "&#9679; Conectat" + (data.conn_used ? (" (" + data.conn_used.toUpperCase() + ")") : ""); badge.style.color = "#c084fc";
+        ctrlBox.style.display = "block"; if (initBox) initBox.style.display = "none"; if (!gTuyaDevState.plug.setupManual) setupBox.style.display = "none";
+        gTuyaDevState.plug.state = Object.assign({}, gTuyaDevState.plug.state, data.state); applyPlugUiFromState(); msgEl.textContent = "";
+      } else {
+        badge.innerHTML = "&#9679; Neconectat"; badge.style.color = "#94a3b8";
+        ctrlBox.style.display = devs.length ? "block" : "none"; if (initBox) initBox.style.display = (!devs.length && !gTuyaDevState.plug.setupManual) ? "block" : "none";
+        if (data.error) { msgEl.textContent = data.error; msgEl.style.color = "#f87171"; }
+      }
+    }
+    async function loadPlugStatus() { try { const r = await fetch("/api/plug/status", { headers: getAcPinHdr() }); if (r.ok) { const d = await r.json(); if (d.ok) renderPlugState(d); } } catch { } }
+    function plugSelectDevice() { const did = document.getElementById("plugDeviceSelect").value; if (did) plugSendControl({ device_id: did }); }
+    function plugToggleConnMode() { gTuyaDevState.plug.connMode = (gTuyaDevState.plug.connMode === "lan") ? "cloud" : "lan"; plugSendControl({ conn_mode: gTuyaDevState.plug.connMode }); }
+    function plugTogglePower() { gTuyaDevState.plug.state.power = !gTuyaDevState.plug.state.power; applyPlugUiFromState(); plugSendControl({ power: gTuyaDevState.plug.state.power }); }
+    async function plugSendControl(cmd) {
+      const did = document.getElementById("plugDeviceSelect").value; if (did && !cmd.device_id) cmd.device_id = did;
+      try {
+        const res = await fetch("/api/plug/control", { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, getAcPinHdr()), body: JSON.stringify(cmd) });
+        const data = await res.json();
+        if (data.ok && data.state) renderPlugState({ connected: true, conn_mode: data.conn_mode || gTuyaDevState.plug.connMode, conn_used: data.conn_used || "", state: data.state, devices: gTuyaDevState.plug.devices, selected_device_id: data.selected_device_id || did });
+        else if (!data.ok && data.error) { const m = document.getElementById("plugMsg"); m.textContent = data.error; m.style.color = "#f87171"; document.getElementById("plugSetupBox").style.display = "block"; }
+      } catch { }
+    }
+    function startPlugPolling() { stopPlugPolling(); gTuyaDevState.plug.pollTimer = setInterval(() => { if (gCurrentView !== "view-load" || document.hidden || gTuyaDevState.plug.setupManual) return; if (gTuyaDevState.plug.connMode === "lan") loadPlugStatus(); }, 3000); }
+    function stopPlugPolling() { if (gTuyaDevState.plug.pollTimer) { clearInterval(gTuyaDevState.plug.pollTimer); gTuyaDevState.plug.pollTimer = null; } }
 
     setInterval(pollServer, 2000);
     setInterval(loadChartData, 20000);
