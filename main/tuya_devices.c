@@ -709,37 +709,49 @@ static double plug_update_daily_kwh(const char *did, double watts, double *out_a
     }
     cJSON *rec = cJSON_GetObjectItem(stats, did);
     double kwh = 0.0;
-    double start_ts = (double)now;
+    double active_s = 0.0;
     if (!cJSON_IsObject(rec) || strcmp(jstr(rec, "date", ""), today) != 0) {
         cJSON_DeleteItemFromObject(stats, did);
         rec = cJSON_AddObjectToObject(stats, did);
         cJSON_AddStringToObject(rec, "date", today);
         cJSON_AddNumberToObject(rec, "kwh", 0.0);
-        cJSON_AddNumberToObject(rec, "start_ts", (double)now);
+        cJSON_AddNumberToObject(rec, "active_s", 0.0);
         cJSON_AddNumberToObject(rec, "last_ts", (double)now);
         cJSON_AddNumberToObject(rec, "last_w", watts);
     } else {
         cJSON *kj = cJSON_GetObjectItem(rec, "kwh");
-        cJSON *sj = cJSON_GetObjectItem(rec, "start_ts");
+        cJSON *aj = cJSON_GetObjectItem(rec, "active_s");
         cJSON *tj = cJSON_GetObjectItem(rec, "last_ts");
         cJSON *wj = cJSON_GetObjectItem(rec, "last_w");
         kwh = cJSON_IsNumber(kj) ? kj->valuedouble : 0.0;
+        active_s = cJSON_IsNumber(aj) ? aj->valuedouble : 0.0;
         double last_ts = cJSON_IsNumber(tj) ? tj->valuedouble : (double)now;
-        start_ts = cJSON_IsNumber(sj) ? sj->valuedouble : last_ts;
         double last_w = cJSON_IsNumber(wj) ? wj->valuedouble : watts;
         double dt = (double)now - last_ts;
         if (dt > 0.0 && dt <= 14400.0) {
             kwh += (((last_w + watts) / 2.0) * dt) / 3600000.0;
+            if (last_w > 2.0 && watts > 2.0) {
+                active_s += dt;
+            } else if (last_w > 2.0 || watts > 2.0) {
+                active_s += dt / 2.0;
+            }
         }
         cJSON_DeleteItemFromObject(rec, "kwh"); cJSON_AddNumberToObject(rec, "kwh", kwh);
-        cJSON_DeleteItemFromObject(rec, "start_ts"); cJSON_AddNumberToObject(rec, "start_ts", start_ts);
+        cJSON_DeleteItemFromObject(rec, "active_s"); cJSON_AddNumberToObject(rec, "active_s", active_s);
         cJSON_DeleteItemFromObject(rec, "last_ts"); cJSON_AddNumberToObject(rec, "last_ts", (double)now);
         cJSON_DeleteItemFromObject(rec, "last_w"); cJSON_AddNumberToObject(rec, "last_w", watts);
     }
     td_save_store();
     xSemaphoreGive(s_td_mutex);
-    double elapsed_h = ((double)now - start_ts) / 3600.0;
-    if (out_avg_w) *out_avg_w = (elapsed_h >= (10.0 / 3600.0)) ? (kwh * 1000.0 / elapsed_h) : watts;
+    if (out_avg_w) {
+        if (active_s >= 10.0) {
+            *out_avg_w = kwh * 1000.0 / (active_s / 3600.0);
+        } else if (watts > 2.0) {
+            *out_avg_w = watts;
+        } else {
+            *out_avg_w = 0.0;
+        }
+    }
     return kwh;
 }
 
