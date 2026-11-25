@@ -27,6 +27,6 @@
 // 5. Portal Wi-Fi de configurare locala (AP Mode) & buton BOOT (GPIO 0)
 #define BRIDGE_AP_SSID "Deye-ESP32-Setup"
 #define BRIDGE_BOOT_BTN_GPIO 0
-#define FW_VERSION "v1.0.1"
+#define FW_VERSION "v1.0.2"
 #define GITHUB_OTA_VERSION_URL "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/ota/version.json"
 #define GITHUB_OTA_BIN_URL     "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/build/deye_esp32_s3_bridge.bin"

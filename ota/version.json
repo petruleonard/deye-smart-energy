@@ -1,5 +1,5 @@
 {
-  "version": "v1.0.1",
+  "version": "v1.0.2",
   "url": "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/build/deye_esp32_s3_bridge.bin",
-  "notes": "v1.0.1: Integrare Tuya IR AC (Whirlpool) + suport simultan TCL si Tuya + fix UI setup AC."
+  "notes": "v1.0.2: Tuya LAN 3.3-3.5 (dezumidificator, termometre, priza cu kWh azi), auto-descoperire si pastrare pagina la refresh."
 }
