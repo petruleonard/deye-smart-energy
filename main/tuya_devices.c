@@ -692,7 +692,50 @@ static cJSON *dp_find(cJSON *dps, const char *k1, const char *k2) {
     return v;
 }
 
-static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps) {
+static double plug_update_daily_kwh(const char *did, double watts) {
+    if (!did || !did[0]) return 0.0;
+    time_t now = time(NULL);
+    struct tm tm_now = {0};
+    localtime_r(&now, &tm_now);
+    char today[16];
+    snprintf(today, sizeof(today), "%04d-%02d-%02d", tm_now.tm_year + 1900, tm_now.tm_mon + 1, tm_now.tm_mday);
+
+    xSemaphoreTake(s_td_mutex, portMAX_DELAY);
+    cJSON *stats = cJSON_GetObjectItem(s_store, "plug_energy_stats");
+    if (!cJSON_IsObject(stats)) {
+        cJSON_DeleteItemFromObject(s_store, "plug_energy_stats");
+        stats = cJSON_AddObjectToObject(s_store, "plug_energy_stats");
+    }
+    cJSON *rec = cJSON_GetObjectItem(stats, did);
+    double kwh = 0.0;
+    if (!cJSON_IsObject(rec) || strcmp(jstr(rec, "date", ""), today) != 0) {
+        cJSON_DeleteItemFromObject(stats, did);
+        rec = cJSON_AddObjectToObject(stats, did);
+        cJSON_AddStringToObject(rec, "date", today);
+        cJSON_AddNumberToObject(rec, "kwh", 0.0);
+        cJSON_AddNumberToObject(rec, "last_ts", (double)now);
+        cJSON_AddNumberToObject(rec, "last_w", watts);
+    } else {
+        cJSON *kj = cJSON_GetObjectItem(rec, "kwh");
+        cJSON *tj = cJSON_GetObjectItem(rec, "last_ts");
+        cJSON *wj = cJSON_GetObjectItem(rec, "last_w");
+        kwh = cJSON_IsNumber(kj) ? kj->valuedouble : 0.0;
+        double last_ts = cJSON_IsNumber(tj) ? tj->valuedouble : (double)now;
+        double last_w = cJSON_IsNumber(wj) ? wj->valuedouble : watts;
+        double dt = (double)now - last_ts;
+        if (dt > 0.0 && dt <= 600.0) {
+            kwh += (((last_w + watts) / 2.0) * dt) / 3600000.0;
+        }
+        cJSON_DeleteItemFromObject(rec, "kwh"); cJSON_AddNumberToObject(rec, "kwh", kwh);
+        cJSON_DeleteItemFromObject(rec, "last_ts"); cJSON_AddNumberToObject(rec, "last_ts", (double)now);
+        cJSON_DeleteItemFromObject(rec, "last_w"); cJSON_AddNumberToObject(rec, "last_w", watts);
+    }
+    td_save_store();
+    xSemaphoreGive(s_td_mutex);
+    return kwh;
+}
+
+static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps, const char *did) {
     cJSON *st = cJSON_CreateObject();
     if (kind == TUYA_KIND_DEHUM) {
         cJSON *pw = dp_find(dps, "switch", "1");
@@ -733,9 +776,12 @@ static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps) {
         cJSON *vv = dp_find(dps, "cur_voltage", "20");
         cJSON *cc = dp_find(dps, "cur_current", "18");
         cJSON_AddBoolToObject(st, "power", cJSON_IsTrue(pw));
-        cJSON_AddNumberToObject(st, "watts", cJSON_IsNumber(wp) ? (wp->valuedouble / 10.0) : 0.0);
+        double watts = cJSON_IsNumber(wp) ? (wp->valuedouble / 10.0) : 0.0;
+        double kwh = plug_update_daily_kwh(did, watts);
+        cJSON_AddNumberToObject(st, "watts", watts);
         cJSON_AddNumberToObject(st, "voltage", cJSON_IsNumber(vv) ? (vv->valuedouble / 10.0) : 0.0);
         cJSON_AddNumberToObject(st, "current_ma", cJSON_IsNumber(cc) ? cc->valueint : 0);
+        cJSON_AddNumberToObject(st, "kwh_today", kwh);
     }
     return st;
 }
@@ -792,7 +838,7 @@ char *tuya_dev_status_json(tuya_dev_kind_t kind) {
             cJSON_AddStringToObject(view, "conn_used", used);
             cJSON_AddBoolToObject(view, "connected", ok);
             if (ok && dps) {
-                cJSON_AddItemToObject(view, "state", dps_to_state(kind, dps));
+                cJSON_AddItemToObject(view, "state", dps_to_state(kind, dps, jstr(d, "id", "")));
                 cJSON_AddStringToObject(view, "error", "");
                 cJSON_Delete(dps);
             } else {
@@ -819,7 +865,7 @@ char *tuya_dev_status_json(tuya_dev_kind_t kind) {
             cJSON_AddStringToObject(resp, "conn_used", used);
             cJSON_AddBoolToObject(resp, "connected", ok);
             if (ok && dps) {
-                cJSON *st = dps_to_state(kind, dps);
+                cJSON *st = dps_to_state(kind, dps, sel_id);
                 xSemaphoreTake(s_td_mutex, portMAX_DELAY);
                 char ck[64];
                 snprintf(ck, sizeof(ck), "%s:%s", kind_list_key(kind), sel_id);
@@ -1113,7 +1159,7 @@ char *tuya_dev_control_json(tuya_dev_kind_t kind, const char *req_body) {
             char ck[64];
             snprintf(ck, sizeof(ck), "%s:%s", lk_key, sel_id);
             cJSON *cached = cJSON_GetObjectItem(s_cache, ck);
-            out_state = cached ? cJSON_Duplicate(cached, true) : dps_to_state(kind, cloud_props);
+            out_state = cached ? cJSON_Duplicate(cached, true) : dps_to_state(kind, cloud_props, sel_id);
             cJSON *it = NULL;
             cJSON_ArrayForEach(it, cloud_props) {
                 if (strcmp(it->string, "switch") == 0 || strcmp(it->string, "switch_1") == 0)
@@ -1133,7 +1179,7 @@ char *tuya_dev_control_json(tuya_dev_kind_t kind, const char *req_body) {
     } else {
         cJSON *dps = NULL;
         ok = dev_read_dps(dev_copy, &dps, used, sizeof(used), err, sizeof(err));
-        if (ok && dps) { out_state = dps_to_state(kind, dps); cJSON_Delete(dps); }
+        if (ok && dps) { out_state = dps_to_state(kind, dps, sel_id); cJSON_Delete(dps); }
     }
 
     cJSON *resp = cJSON_CreateObject();

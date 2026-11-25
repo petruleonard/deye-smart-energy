@@ -4538,7 +4538,8 @@
     function applyPlugUiFromState() {
       const st = gTuyaDevState.plug.state || {}, pwr = !!st.power;
       document.getElementById("plugWatts").textContent = (st.watts !== undefined && st.watts !== null ? Number(st.watts).toFixed(1) : "--") + " W";
-      document.getElementById("plugMetrics").textContent = (st.voltage !== undefined ? Number(st.voltage).toFixed(1) : "--") + " V \u2022 " + (st.current_ma ?? "--") + " mA";
+      const kwhTxt = (st.kwh_today !== undefined && st.kwh_today !== null) ? (" \u2022 Azi: " + Number(st.kwh_today).toFixed(2) + " kWh") : "";
+      document.getElementById("plugMetrics").textContent = (st.voltage !== undefined ? Number(st.voltage).toFixed(1) : "--") + " V \u2022 " + (st.current_ma ?? "--") + " mA" + kwhTxt;
       const pBtn = document.getElementById("plugPowerBtn"); pBtn.textContent = pwr ? "ON" : "OFF"; pBtn.style.background = pwr ? "#9333ea" : "#1e293b"; pBtn.style.borderColor = pwr ? "#c084fc" : "#475569"; pBtn.style.color = pwr ? "#ffffff" : "#94a3b8";
     }
     function renderPlugState(data) {
