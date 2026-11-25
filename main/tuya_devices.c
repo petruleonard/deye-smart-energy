@@ -692,7 +692,8 @@ static cJSON *dp_find(cJSON *dps, const char *k1, const char *k2) {
     return v;
 }
 
-static double plug_update_daily_kwh(const char *did, double watts) {
+static double plug_update_daily_kwh(const char *did, double watts, double *out_avg_w) {
+    if (out_avg_w) *out_avg_w = watts;
     if (!did || !did[0]) return 0.0;
     time_t now = time(NULL);
     struct tm tm_now = {0};
@@ -708,30 +709,37 @@ static double plug_update_daily_kwh(const char *did, double watts) {
     }
     cJSON *rec = cJSON_GetObjectItem(stats, did);
     double kwh = 0.0;
+    double start_ts = (double)now;
     if (!cJSON_IsObject(rec) || strcmp(jstr(rec, "date", ""), today) != 0) {
         cJSON_DeleteItemFromObject(stats, did);
         rec = cJSON_AddObjectToObject(stats, did);
         cJSON_AddStringToObject(rec, "date", today);
         cJSON_AddNumberToObject(rec, "kwh", 0.0);
+        cJSON_AddNumberToObject(rec, "start_ts", (double)now);
         cJSON_AddNumberToObject(rec, "last_ts", (double)now);
         cJSON_AddNumberToObject(rec, "last_w", watts);
     } else {
         cJSON *kj = cJSON_GetObjectItem(rec, "kwh");
+        cJSON *sj = cJSON_GetObjectItem(rec, "start_ts");
         cJSON *tj = cJSON_GetObjectItem(rec, "last_ts");
         cJSON *wj = cJSON_GetObjectItem(rec, "last_w");
         kwh = cJSON_IsNumber(kj) ? kj->valuedouble : 0.0;
         double last_ts = cJSON_IsNumber(tj) ? tj->valuedouble : (double)now;
+        start_ts = cJSON_IsNumber(sj) ? sj->valuedouble : last_ts;
         double last_w = cJSON_IsNumber(wj) ? wj->valuedouble : watts;
         double dt = (double)now - last_ts;
-        if (dt > 0.0 && dt <= 600.0) {
+        if (dt > 0.0 && dt <= 14400.0) {
             kwh += (((last_w + watts) / 2.0) * dt) / 3600000.0;
         }
         cJSON_DeleteItemFromObject(rec, "kwh"); cJSON_AddNumberToObject(rec, "kwh", kwh);
+        cJSON_DeleteItemFromObject(rec, "start_ts"); cJSON_AddNumberToObject(rec, "start_ts", start_ts);
         cJSON_DeleteItemFromObject(rec, "last_ts"); cJSON_AddNumberToObject(rec, "last_ts", (double)now);
         cJSON_DeleteItemFromObject(rec, "last_w"); cJSON_AddNumberToObject(rec, "last_w", watts);
     }
     td_save_store();
     xSemaphoreGive(s_td_mutex);
+    double elapsed_h = ((double)now - start_ts) / 3600.0;
+    if (out_avg_w) *out_avg_w = (elapsed_h >= (10.0 / 3600.0)) ? (kwh * 1000.0 / elapsed_h) : watts;
     return kwh;
 }
 
@@ -777,8 +785,10 @@ static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps, const char *did) {
         cJSON *cc = dp_find(dps, "cur_current", "18");
         cJSON_AddBoolToObject(st, "power", cJSON_IsTrue(pw));
         double watts = cJSON_IsNumber(wp) ? (wp->valuedouble / 10.0) : 0.0;
-        double kwh = plug_update_daily_kwh(did, watts);
+        double avg_w = watts;
+        double kwh = plug_update_daily_kwh(did, watts, &avg_w);
         cJSON_AddNumberToObject(st, "watts", watts);
+        cJSON_AddNumberToObject(st, "avg_watts", avg_w);
         cJSON_AddNumberToObject(st, "voltage", cJSON_IsNumber(vv) ? (vv->valuedouble / 10.0) : 0.0);
         cJSON_AddNumberToObject(st, "current_ma", cJSON_IsNumber(cc) ? cc->valueint : 0);
         cJSON_AddNumberToObject(st, "kwh_today", kwh);
