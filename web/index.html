@@ -2915,21 +2915,16 @@
             out.push(neonArrowHead(pts[2], pts[1], color));
           };
 
-          // Exact Mockup Curve Topology:
-          // 1a. SOLAR PV (right edge) -> curves down into DEYE top
+          // Clean 4-Channel Pinwheel Topology (one side of DEYE & one grid gap per flow):
+          // 1. SOLAR PV (bottom) -> curves right into DEYE (left)
           drawNeonCurve(
-            [[pR.r + 2, pR.cy - 4], [cR.cx, pR.cy - 4], [cR.cx, cR.t - 9]],
+            [[pR.cx + 8, pR.b + 2], [pR.cx + 8, cR.cy], [cR.l - 9, cR.cy]],
             "#fde047", "#f59e0b", "#fef9c3", pvOn, false, 20
           );
-          // 1b. SOLAR PV (bottom) -> curves right into DEYE left
-          drawNeonCurve(
-            [[pR.cx + 8, pR.b + 2], [pR.cx + 8, cR.cy - 2], [cR.l - 9, cR.cy - 2]],
-            "#fde047", "#f59e0b", "#fef9c3", pvOn, false, 20
-          );
-          // 2. DEYE (upper-right) <-> RETEA (bottom)
+          // 2. DEYE (top) <-> RETEA (left)
           const grRev = grW > 0;
           drawNeonCurve(
-            [[cR.r + (grRev ? 9 : 2), cR.cy - 5], [gR.cx - 8, cR.cy - 5], [gR.cx - 8, gR.b + (grRev ? 2 : 9)]],
+            [[cR.cx, cR.t - (grRev ? 9 : 2)], [cR.cx, gR.cy], [gR.l - (grRev ? 2 : 9), gR.cy]],
             "#93c5fd", "#6366f1", "#e0e7ff", grOn, grRev, 18
           );
           // 3. DEYE (bottom) <-> BATERIE (right edge, cleanly below DEYE overlap & beside SoC ring)
@@ -2939,9 +2934,9 @@
             [[cR.cx, cR.b + (baRev ? 9 : 2)], [cR.cx, batY], [bR.r + (baRev ? 2 : 9), batY]],
             "#6ee7b7", "#10b981", "#d1fae5", baOn, baRev, 16
           );
-          // 4. DEYE (lower-right) -> CONSUM CASA (top)
+          // 4. DEYE (right) -> curves down into CONSUM CASA (top)
           drawNeonCurve(
-            [[cR.r + 2, cR.cy + 5], [lR.cx - 8, cR.cy + 5], [lR.cx - 8, lR.t - 9]],
+            [[cR.r + 2, cR.cy], [lR.cx - 8, cR.cy], [lR.cx - 8, lR.t - 9]],
             "#7dd3fc", "#0ea5e9", "#e0f2fe", loOn, false, 18
           );
 
