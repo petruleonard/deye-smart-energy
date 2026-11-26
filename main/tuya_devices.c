@@ -766,6 +766,94 @@ static int plug_log_cmp(const void *a, const void *b) {
     return (ta < tb) ? -1 : (ta > tb ? 1 : 0);
 }
 
+typedef struct {
+    long long w0;
+    long long w1;
+} ac_win_t;
+
+static void tuya_get_ac_remote_id(char *out_rid, size_t out_sz) {
+    out_rid[0] = '\0';
+    const char *col = strchr(g_settings.ac_selected_device_id, ':');
+    if (col && col[1]) {
+        snprintf(out_rid, out_sz, "%s", col + 1);
+        return;
+    }
+    if (g_settings.ac_devices_json[0]) {
+        cJSON *arr = cJSON_Parse(g_settings.ac_devices_json);
+        if (cJSON_IsArray(arr)) {
+            cJSON *d = NULL;
+            cJSON_ArrayForEach(d, arr) {
+                const char *id = jstr(d, "id", "");
+                const char *c = strchr(id, ':');
+                if (c && c[1]) {
+                    snprintf(out_rid, out_sz, "%s", c + 1);
+                    break;
+                }
+            }
+        }
+        if (arr) cJSON_Delete(arr);
+    }
+}
+
+static int tuya_read_ac_on_windows(const char *reg, const char *cid, const char *sec, const char *rid,
+                                     long long start_ms, long long end_ms, ac_win_t *wins, int max_wins) {
+    if (!rid || !rid[0] || !cid || !cid[0] || !sec || !sec[0]) return 0;
+    char *resp = malloc(16384);
+    plug_log_pt_t *evs = malloc(100 * sizeof(plug_log_pt_t));
+    if (!resp || !evs) { free(resp); free(evs); return 0; }
+    char path[256];
+    snprintf(path, sizeof(path),
+             "/v1.0/devices/%s/logs?codes=power&end_time=%lld&size=100&start_time=%lld&type=7",
+             rid, end_ms, start_ms);
+    int code = ac_tuya_signed_req(reg, cid, sec, HTTP_METHOD_GET, path, NULL, resp, 16384);
+    cJSON *j = cJSON_Parse(resp);
+    free(resp);
+    if (code != 200 || !j || !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+        if (j) cJSON_Delete(j);
+        free(evs);
+        return 0;
+    }
+    cJSON *res = cJSON_GetObjectItem(j, "result");
+    cJSON *logs = res ? cJSON_GetObjectItem(res, "logs") : NULL;
+    int n_ev = 0;
+    cJSON *it = NULL;
+    cJSON_ArrayForEach(it, logs) {
+        if (strcmp(jstr(it, "code", ""), "power") != 0) continue;
+        cJSON *etj = cJSON_GetObjectItem(it, "event_time");
+        long long et = cJSON_IsNumber(etj) ? (long long)etj->valuedouble : 0;
+        const char *vs = jstr(it, "value", "");
+        int is_on = (strcasecmp(vs, "true") == 0 || strcmp(vs, "1") == 0 || strcasecmp(vs, "on") == 0) ? 1 : 0;
+        if (et >= start_ms && n_ev < 100) {
+            evs[n_ev].t_ms = et;
+            evs[n_ev].val = is_on;
+            n_ev++;
+        }
+    }
+    cJSON_Delete(j);
+    if (n_ev == 0) { free(evs); return 0; }
+    qsort(evs, (size_t)n_ev, sizeof(plug_log_pt_t), plug_log_cmp);
+    int nw = 0;
+    long long cur_on = (!evs[0].val) ? start_ms : -1;
+    for (int i = 0; i < n_ev; i++) {
+        if (evs[i].val && cur_on < 0) cur_on = evs[i].t_ms;
+        else if (!evs[i].val && cur_on >= 0) {
+            if (evs[i].t_ms > cur_on && nw < max_wins) {
+                wins[nw].w0 = cur_on;
+                wins[nw].w1 = evs[i].t_ms;
+                nw++;
+            }
+            cur_on = -1;
+        }
+    }
+    if (cur_on >= 0 && end_ms > cur_on && nw < max_wins) {
+        wins[nw].w0 = cur_on;
+        wins[nw].w1 = end_ms;
+        nw++;
+    }
+    free(evs);
+    return nw;
+}
+
 static bool tuya_cloud_read_plug_today_stats(const char *reg, const char *cid, const char *sec, const char *did, double *out_kwh, double *out_avg_w) {
     if (!reg || !cid || !cid[0] || !sec || !sec[0] || !did || !did[0]) return false;
     char err[64] = {0};
@@ -836,13 +924,30 @@ static bool tuya_cloud_read_plug_today_stats(const char *reg, const char *cid, c
     if (!ok_any) { free(pts); return false; }
 
     qsort(pts, (size_t)n_pts, sizeof(plug_log_pt_t), plug_log_cmp);
+    char ac_rid[64];
+    tuya_get_ac_remote_id(ac_rid, sizeof(ac_rid));
+    ac_win_t wins[64];
+    int n_wins = ac_rid[0] ? tuya_read_ac_on_windows(reg, cid, sec, ac_rid, start_ms, (long long)now * 1000LL, wins, 64) : 0;
     long long total_wh = 0;
     double active_s = 0.0;
     for (int i = 0; i < n_pts; i++) {
         total_wh += pts[i].val;
         if (i > 0) {
-            double dt = (double)(pts[i].t_ms - pts[i - 1].t_ms) / 1000.0;
-            if ((dt > 0.0 && dt <= 3600.0) || (pts[i].val > 5 && dt <= 7200.0)) active_s += dt;
+            long long t0 = pts[i - 1].t_ms, t1 = pts[i].t_ms;
+            double dt = (double)(t1 - t0) / 1000.0;
+            if ((dt > 0.0 && dt <= 3600.0) || (pts[i].val > 5 && dt <= 7200.0)) {
+                if (n_wins > 0) {
+                    long long ov_ms = 0;
+                    for (int w = 0; w < n_wins; w++) {
+                        long long a = (t0 > wins[w].w0) ? t0 : wins[w].w0;
+                        long long b = (t1 < wins[w].w1) ? t1 : wins[w].w1;
+                        if (b > a) ov_ms += (b - a);
+                    }
+                    active_s += (double)ov_ms / 1000.0;
+                } else {
+                    active_s += dt;
+                }
+            }
         }
     }
     free(pts);
