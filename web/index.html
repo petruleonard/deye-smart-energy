@@ -2915,29 +2915,29 @@
             out.push(neonArrowHead(pts[2], pts[1], color));
           };
 
-          // Clean 4-Channel Pinwheel Topology (one side of DEYE & one grid gap per flow):
-          // 1. SOLAR PV (bottom) -> curves right into DEYE (left)
+          // Clean Bilateral-Symmetric 4-Channel Topology (no rotational symmetry, well-spaced):
+          // 1. SOLAR PV (bottom) -> down, then right into DEYE (upper-left)
           drawNeonCurve(
-            [[pR.cx + 8, pR.b + 2], [pR.cx + 8, cR.cy], [cR.l - 9, cR.cy]],
+            [[pR.cx + 8, pR.b + 2], [pR.cx + 8, cR.cy - 14], [cR.l - 9, cR.cy - 14]],
             "#fde047", "#f59e0b", "#fef9c3", pvOn, false, 20
           );
-          // 2. DEYE (top) <-> RETEA (left)
+          // 2. DEYE (upper-right) <-> right, then up into RETEA (bottom)
           const grRev = grW > 0;
           drawNeonCurve(
-            [[cR.cx, cR.t - (grRev ? 9 : 2)], [cR.cx, gR.cy], [gR.l - (grRev ? 2 : 9), gR.cy]],
-            "#93c5fd", "#6366f1", "#e0e7ff", grOn, grRev, 18
+            [[cR.r + (grRev ? 9 : 2), cR.cy - 14], [gR.cx - 8, cR.cy - 14], [gR.cx - 8, gR.b + (grRev ? 2 : 9)]],
+            "#93c5fd", "#6366f1", "#e0e7ff", grOn, grRev, 20
           );
-          // 3. DEYE (bottom) <-> BATERIE (right edge, cleanly below DEYE overlap & beside SoC ring)
+          // 3. DEYE (bottom-left) <-> down, then left into BATERIE (right edge, clearly visible below DEYE)
           const baRev = baW < 0;
-          const batY = bR.t + 54;
+          const batY = bR.t + 66;
           drawNeonCurve(
-            [[cR.cx, cR.b + (baRev ? 9 : 2)], [cR.cx, batY], [bR.r + (baRev ? 2 : 9), batY]],
+            [[cR.cx - 8, cR.b + (baRev ? 9 : 2)], [cR.cx - 8, batY], [bR.r + (baRev ? 2 : 9), batY]],
             "#6ee7b7", "#10b981", "#d1fae5", baOn, baRev, 16
           );
-          // 4. DEYE (right) -> curves down into CONSUM CASA (top)
+          // 4. DEYE (lower-right) -> right, then down into CONSUM CASA (top)
           drawNeonCurve(
-            [[cR.r + 2, cR.cy], [lR.cx - 8, cR.cy], [lR.cx - 8, lR.t - 9]],
-            "#7dd3fc", "#0ea5e9", "#e0f2fe", loOn, false, 18
+            [[cR.r + 2, cR.cy + 14], [lR.cx - 8, cR.cy + 14], [lR.cx - 8, lR.t - 9]],
+            "#7dd3fc", "#0ea5e9", "#e0f2fe", loOn, false, 20
           );
 
           g.innerHTML = out.join("");
