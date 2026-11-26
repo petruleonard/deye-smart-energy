@@ -842,7 +842,7 @@ static bool tuya_cloud_read_plug_today_stats(const char *reg, const char *cid, c
         total_wh += pts[i].val;
         if (i > 0) {
             double dt = (double)(pts[i].t_ms - pts[i - 1].t_ms) / 1000.0;
-            if (dt > 0.0 && dt <= 1800.0) active_s += dt;
+            if ((dt > 0.0 && dt <= 3600.0) || (pts[i].val > 5 && dt <= 7200.0)) active_s += dt;
         }
     }
     free(pts);
