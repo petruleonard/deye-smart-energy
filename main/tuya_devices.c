@@ -755,7 +755,103 @@ static double plug_update_daily_kwh(const char *did, double watts, double *out_a
     return kwh;
 }
 
-static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps, const char *did) {
+typedef struct {
+    long long t_ms;
+    int val;
+} plug_log_pt_t;
+
+static int plug_log_cmp(const void *a, const void *b) {
+    long long ta = ((const plug_log_pt_t *)a)->t_ms;
+    long long tb = ((const plug_log_pt_t *)b)->t_ms;
+    return (ta < tb) ? -1 : (ta > tb ? 1 : 0);
+}
+
+static bool tuya_cloud_read_plug_today_stats(const char *reg, const char *cid, const char *sec, const char *did, double *out_kwh, double *out_avg_w) {
+    if (!reg || !cid || !cid[0] || !sec || !sec[0] || !did || !did[0]) return false;
+    char err[64] = {0};
+    if (!ac_tuya_get_token(reg, cid, sec, false, err, sizeof(err))) return false;
+    time_t now = time(NULL);
+    struct tm tm_mid = {0};
+    localtime_r(&now, &tm_mid);
+    tm_mid.tm_hour = 0; tm_mid.tm_min = 0; tm_mid.tm_sec = 0;
+    time_t mid = mktime(&tm_mid);
+    if (mid <= 0) return false;
+    long long start_ms = (long long)mid * 1000LL;
+    long long cur_end = (long long)now * 1000LL;
+
+    char *resp = malloc(16384);
+    plug_log_pt_t *pts = malloc(500 * sizeof(plug_log_pt_t));
+    if (!resp || !pts) { free(resp); free(pts); return false; }
+
+    int n_pts = 0;
+    bool ok_any = false;
+    for (int page = 0; page < 5 && n_pts < 500; page++) {
+        char path[256];
+        snprintf(path, sizeof(path),
+                 "/v2.0/cloud/thing/%s/report-logs?codes=add_ele&end_time=%lld&size=100&start_time=%lld",
+                 did, cur_end, start_ms);
+        int code = ac_tuya_signed_req(reg, cid, sec, HTTP_METHOD_GET, path, NULL, resp, 16384);
+        cJSON *j = cJSON_Parse(resp);
+        if (code == 200 && j && !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+            cJSON *cj = cJSON_GetObjectItem(j, "code");
+            if (cJSON_IsNumber(cj) && cj->valueint == 1010) {
+                cJSON_Delete(j);
+                if (ac_tuya_get_token(reg, cid, sec, true, err, sizeof(err))) {
+                    code = ac_tuya_signed_req(reg, cid, sec, HTTP_METHOD_GET, path, NULL, resp, 16384);
+                    j = cJSON_Parse(resp);
+                } else j = NULL;
+            }
+        }
+        if (code != 200 || !j || !cJSON_IsTrue(cJSON_GetObjectItem(j, "success"))) {
+            if (j) cJSON_Delete(j);
+            break;
+        }
+        ok_any = true;
+        cJSON *res = cJSON_GetObjectItem(j, "result");
+        cJSON *logs = res ? cJSON_GetObjectItem(res, "logs") : NULL;
+        bool has_more = res ? cJSON_IsTrue(cJSON_GetObjectItem(res, "has_more")) : false;
+        long long min_t = cur_end;
+        int added = 0;
+        cJSON *it = NULL;
+        cJSON_ArrayForEach(it, logs) {
+            cJSON *etj = cJSON_GetObjectItem(it, "event_time");
+            cJSON *vj = cJSON_GetObjectItem(it, "value");
+            long long et = cJSON_IsNumber(etj) ? (long long)etj->valuedouble : 0;
+            int v = 0;
+            if (cJSON_IsString(vj)) v = atoi(vj->valuestring);
+            else if (cJSON_IsNumber(vj)) v = vj->valueint;
+            if (et >= start_ms && n_pts < 500) {
+                pts[n_pts].t_ms = et;
+                pts[n_pts].val = (v > 0) ? v : 0;
+                n_pts++;
+                added++;
+                if (et < min_t) min_t = et;
+            }
+        }
+        cJSON_Delete(j);
+        if (!has_more || added == 0 || min_t <= start_ms) break;
+        cur_end = min_t - 1;
+    }
+    free(resp);
+    if (!ok_any) { free(pts); return false; }
+
+    qsort(pts, (size_t)n_pts, sizeof(plug_log_pt_t), plug_log_cmp);
+    long long total_wh = 0;
+    double active_s = 0.0;
+    for (int i = 0; i < n_pts; i++) {
+        total_wh += pts[i].val;
+        if (i > 0) {
+            double dt = (double)(pts[i].t_ms - pts[i - 1].t_ms) / 1000.0;
+            if (dt > 0.0 && dt <= 1800.0) active_s += dt;
+        }
+    }
+    free(pts);
+    if (out_kwh) *out_kwh = (double)total_wh / 1000.0;
+    if (out_avg_w) *out_avg_w = (active_s >= 10.0) ? ((double)total_wh / (active_s / 3600.0)) : 0.0;
+    return true;
+}
+
+static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps, const char *did, cJSON *dev) {
     cJSON *st = cJSON_CreateObject();
     if (kind == TUYA_KIND_DEHUM) {
         cJSON *pw = dp_find(dps, "switch", "1");
@@ -797,8 +893,20 @@ static cJSON *dps_to_state(tuya_dev_kind_t kind, cJSON *dps, const char *did) {
         cJSON *cc = dp_find(dps, "cur_current", "18");
         cJSON_AddBoolToObject(st, "power", cJSON_IsTrue(pw));
         double watts = cJSON_IsNumber(wp) ? (wp->valuedouble / 10.0) : 0.0;
-        double avg_w = watts;
-        double kwh = plug_update_daily_kwh(did, watts, &avg_w);
+        double avg_w = (watts > 2.0) ? watts : 0.0;
+        double kwh = 0.0;
+        bool got_cloud = false;
+        if (dev && did && did[0]) {
+            char reg[8], cid[48], sec[64];
+            td_eff_creds(dev, reg, sizeof(reg), cid, sizeof(cid), sec, sizeof(sec));
+            if (cid[0] && sec[0] && tuya_cloud_read_plug_today_stats(reg, cid, sec, did, &kwh, &avg_w)) {
+                got_cloud = true;
+                if (avg_w <= 0.0 && watts > 2.0) avg_w = watts;
+            }
+        }
+        if (!got_cloud) {
+            kwh = plug_update_daily_kwh(did, watts, &avg_w);
+        }
         cJSON_AddNumberToObject(st, "watts", watts);
         cJSON_AddNumberToObject(st, "avg_watts", avg_w);
         cJSON_AddNumberToObject(st, "voltage", cJSON_IsNumber(vv) ? (vv->valuedouble / 10.0) : 0.0);
@@ -860,7 +968,7 @@ char *tuya_dev_status_json(tuya_dev_kind_t kind) {
             cJSON_AddStringToObject(view, "conn_used", used);
             cJSON_AddBoolToObject(view, "connected", ok);
             if (ok && dps) {
-                cJSON_AddItemToObject(view, "state", dps_to_state(kind, dps, jstr(d, "id", "")));
+                cJSON_AddItemToObject(view, "state", dps_to_state(kind, dps, jstr(d, "id", ""), NULL));
                 cJSON_AddStringToObject(view, "error", "");
                 cJSON_Delete(dps);
             } else {
@@ -887,7 +995,7 @@ char *tuya_dev_status_json(tuya_dev_kind_t kind) {
             cJSON_AddStringToObject(resp, "conn_used", used);
             cJSON_AddBoolToObject(resp, "connected", ok);
             if (ok && dps) {
-                cJSON *st = dps_to_state(kind, dps, sel_id);
+                cJSON *st = dps_to_state(kind, dps, sel_id, cur_dev);
                 xSemaphoreTake(s_td_mutex, portMAX_DELAY);
                 char ck[64];
                 snprintf(ck, sizeof(ck), "%s:%s", kind_list_key(kind), sel_id);
@@ -1181,7 +1289,7 @@ char *tuya_dev_control_json(tuya_dev_kind_t kind, const char *req_body) {
             char ck[64];
             snprintf(ck, sizeof(ck), "%s:%s", lk_key, sel_id);
             cJSON *cached = cJSON_GetObjectItem(s_cache, ck);
-            out_state = cached ? cJSON_Duplicate(cached, true) : dps_to_state(kind, cloud_props, sel_id);
+            out_state = cached ? cJSON_Duplicate(cached, true) : dps_to_state(kind, cloud_props, sel_id, NULL);
             cJSON *it = NULL;
             cJSON_ArrayForEach(it, cloud_props) {
                 if (strcmp(it->string, "switch") == 0 || strcmp(it->string, "switch_1") == 0)
@@ -1201,7 +1309,7 @@ char *tuya_dev_control_json(tuya_dev_kind_t kind, const char *req_body) {
     } else {
         cJSON *dps = NULL;
         ok = dev_read_dps(dev_copy, &dps, used, sizeof(used), err, sizeof(err));
-        if (ok && dps) { out_state = dps_to_state(kind, dps, sel_id); cJSON_Delete(dps); }
+        if (ok && dps) { out_state = dps_to_state(kind, dps, sel_id, dev_copy); cJSON_Delete(dps); }
     }
 
     cJSON *resp = cJSON_CreateObject();
