@@ -559,12 +559,41 @@ static bool tuya_lan_v35(const char *did, const char *ip, const char *lkey, cons
     return ok;
 }
 
+static void td_persist_lan_version(const char *did, const char *ver, const char *ip) {
+    if (!did || !did[0] || !ver || !ver[0]) return;
+    xSemaphoreTake(s_td_mutex, portMAX_DELAY);
+    bool changed = false;
+    const char *keys[3] = {"dehum_devices", "sensor_devices", "plug_devices"};
+    for (int k = 0; k < 3; k++) {
+        cJSON *arr = cJSON_GetObjectItem(s_store, keys[k]);
+        cJSON *d = NULL;
+        cJSON_ArrayForEach(d, arr) {
+            if (strcmp(jstr(d, "id", ""), did) == 0) {
+                const char *cur_v = jstr(d, "version", "auto");
+                if (!cur_v[0] || strcmp(cur_v, "auto") == 0) {
+                    cJSON_DeleteItemFromObject(d, "version");
+                    cJSON_AddStringToObject(d, "version", ver);
+                    changed = true;
+                }
+                if (ip && ip[0] && !jstr(d, "ip", "")[0]) {
+                    cJSON_DeleteItemFromObject(d, "ip");
+                    cJSON_AddStringToObject(d, "ip", ip);
+                    changed = true;
+                }
+            }
+        }
+    }
+    if (changed) td_save_store();
+    xSemaphoreGive(s_td_mutex);
+}
+
 static bool tuya_lan_req(const char *did, const char *ip_in, const char *lkey, const char *ver_in,
                          const char *dps_json, cJSON **out_dps, char *err, size_t err_sz) {
     if (!did[0] || !lkey[0]) { snprintf(err, err_sz, "Lipsesc Device ID sau Local Key"); return false; }
     char ip[24] = {0}, ver[8] = {0};
     strncpy(ip, ip_in, sizeof(ip) - 1);
     strncpy(ver, ver_in[0] ? ver_in : "auto", sizeof(ver) - 1);
+    bool was_auto = (strcmp(ver, "auto") == 0);
     if (!ip[0]) {
         lan_disc_entry_t entries[6];
         int cnt = 0;
@@ -572,20 +601,33 @@ static bool tuya_lan_req(const char *did, const char *ip_in, const char *lkey, c
         for (int i = 0; i < cnt; i++) {
             if (strcmp(entries[i].id, did) == 0) {
                 strncpy(ip, entries[i].ip, sizeof(ip) - 1);
-                if (strcmp(ver, "auto") == 0) strncpy(ver, entries[i].ver, sizeof(ver) - 1);
+                if (was_auto) strncpy(ver, entries[i].ver, sizeof(ver) - 1);
                 break;
             }
         }
     }
     if (!ip[0]) { snprintf(err, err_sz, "Lipseste IP local (negasit pe LAN)"); return false; }
 
-    if (strcmp(ver, "3.5") == 0) return tuya_lan_v35(did, ip, lkey, dps_json, out_dps, err, err_sz);
-    if (strcmp(ver, "3.4") == 0) return tuya_lan_v34(did, ip, lkey, dps_json, out_dps, err, err_sz);
-    if (strcmp(ver, "3.3") == 0) return tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz);
+    if (strcmp(ver, "3.5") == 0) {
+        bool ok = tuya_lan_v35(did, ip, lkey, dps_json, out_dps, err, err_sz);
+        if (ok && was_auto) td_persist_lan_version(did, "3.5", ip);
+        return ok;
+    }
+    if (strcmp(ver, "3.4") == 0) {
+        bool ok = tuya_lan_v34(did, ip, lkey, dps_json, out_dps, err, err_sz);
+        if (ok && was_auto) td_persist_lan_version(did, "3.4", ip);
+        return ok;
+    }
+    if (strcmp(ver, "3.3") == 0) {
+        bool ok = tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz);
+        if (ok && was_auto) td_persist_lan_version(did, "3.3", ip);
+        return ok;
+    }
 
-    if (tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz)) return true;
-    if (tuya_lan_v34(did, ip, lkey, dps_json, out_dps, err, err_sz)) return true;
-    return tuya_lan_v35(did, ip, lkey, dps_json, out_dps, err, err_sz);
+    if (tuya_lan_v35(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.5", ip); return true; }
+    if (tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.3", ip); return true; }
+    if (tuya_lan_v34(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.4", ip); return true; }
+    return false;
 }
 
 // ---------- Cloud read & write ----------
