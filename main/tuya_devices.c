@@ -625,8 +625,8 @@ static bool tuya_lan_req(const char *did, const char *ip_in, const char *lkey, c
     }
 
     if (tuya_lan_v35(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.5", ip); return true; }
-    if (tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.3", ip); return true; }
     if (tuya_lan_v34(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.4", ip); return true; }
+    if (tuya_lan_v33(did, ip, lkey, dps_json, out_dps, err, err_sz)) { td_persist_lan_version(did, "3.3", ip); return true; }
     return false;
 }
 
