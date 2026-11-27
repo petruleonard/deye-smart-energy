@@ -15,6 +15,7 @@ typedef enum {
 
 void tuya_devices_init(void);
 void tuya_devices_get_fallback_creds(char *reg, size_t reg_sz, char *cid, size_t cid_sz, char *sec, size_t sec_sz);
+void tuya_devices_ai_summary(char *out, size_t out_sz);
 
 char *tuya_dev_status_json(tuya_dev_kind_t kind);
 char *tuya_dev_discover_json(tuya_dev_kind_t kind, const char *req_body);

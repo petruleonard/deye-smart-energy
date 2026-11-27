@@ -1,5 +1,5 @@
 {
-  "version": "v1.0.2",
+  "version": "v1.0.3",
   "url": "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/build/deye_esp32_s3_bridge.bin",
-  "notes": "v1.0.2: Tuya LAN 3.3-3.5 (dezumidificator, termometre, priza cu kWh azi), auto-descoperire si pastrare pagina la refresh."
+  "notes": "v1.0.3: Argus AI vede toate dispozitivele Tuya & AC TCL (read-only), persistenta grafic zilnic in SPIFFS, flux fibra optica Bezier si autodetectare LAN 3.5->3.3."
 }

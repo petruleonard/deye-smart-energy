@@ -1478,3 +1478,101 @@ char *tuya_dev_control_json(tuya_dev_kind_t kind, const char *req_body) {
     cJSON_Delete(resp);
     return out;
 }
+
+void tuya_devices_ai_summary(char *out, size_t out_sz) {
+    if (!out || out_sz < 64) return;
+    out[0] = '\0';
+    td_init_once();
+
+    const tuya_dev_kind_t kinds[3] = {TUYA_KIND_DEHUM, TUYA_KIND_SENSOR, TUYA_KIND_PLUG};
+    const char *labels[3] = {"Dezumidificator", "Senzor T/H", "Priza Smart"};
+    size_t pos = 0;
+
+    for (int ki = 0; ki < 3; ki++) {
+        tuya_dev_kind_t kind = kinds[ki];
+        xSemaphoreTake(s_td_mutex, portMAX_DELAY);
+        cJSON *arr = cJSON_Duplicate(cJSON_GetObjectItem(s_store, kind_list_key(kind)), true);
+        xSemaphoreGive(s_td_mutex);
+        if (!cJSON_IsArray(arr)) { if (arr) cJSON_Delete(arr); continue; }
+
+        cJSON *d = NULL;
+        cJSON_ArrayForEach(d, arr) {
+            const char *did = jstr(d, "id", "");
+            const char *name = jstr(d, "name", labels[ki]);
+            cJSON *st = NULL;
+            char used[16] = {0}, err[96] = {0};
+            cJSON *dps = NULL;
+            if (dev_read_dps(d, &dps, used, sizeof(used), err, sizeof(err)) && dps) {
+                st = dps_to_state(kind, dps, did, d);
+                cJSON_Delete(dps);
+                xSemaphoreTake(s_td_mutex, portMAX_DELAY);
+                char ck[64];
+                snprintf(ck, sizeof(ck), "%s:%s", kind_list_key(kind), did);
+                cJSON_DeleteItemFromObject(s_cache, ck);
+                cJSON_AddItemToObject(s_cache, ck, cJSON_Duplicate(st, true));
+                xSemaphoreGive(s_td_mutex);
+            } else {
+                xSemaphoreTake(s_td_mutex, portMAX_DELAY);
+                char ck[64];
+                snprintf(ck, sizeof(ck), "%s:%s", kind_list_key(kind), did);
+                cJSON *cached = cJSON_GetObjectItem(s_cache, ck);
+                if (cached) st = cJSON_Duplicate(cached, true);
+                xSemaphoreGive(s_td_mutex);
+            }
+
+            if (pos + 160 >= out_sz) { if (st) cJSON_Delete(st); break; }
+            if (!st) {
+                pos += snprintf(out + pos, out_sz - pos, "- %s (%s): offline/sleep (%s)\n",
+                                name, labels[ki], err[0] ? err : "fara date");
+                continue;
+            }
+            if (kind == TUYA_KIND_DEHUM) {
+                cJSON *pw = cJSON_GetObjectItem(st, "power");
+                cJSON *th = cJSON_GetObjectItem(st, "target_humidity");
+                cJSON *ch = cJSON_GetObjectItem(st, "current_humidity");
+                cJSON *md = cJSON_GetObjectItem(st, "mode");
+                cJSON *fs = cJSON_GetObjectItem(st, "fan_speed");
+                cJSON *an = cJSON_GetObjectItem(st, "anion");
+                cJSON *lk = cJSON_GetObjectItem(st, "child_lock");
+                pos += snprintf(out + pos, out_sz - pos,
+                                "- %s (%s, via %s): %s, Mod=%s, Vent=%s, Tinta=%d%%, Camera=%d%%, Ionizare=%s, Blocare=%s\n",
+                                name, labels[ki], used[0] ? used : "cache",
+                                cJSON_IsTrue(pw) ? "PORNIT" : "OPRIT",
+                                cJSON_IsString(md) ? md->valuestring : "-",
+                                cJSON_IsString(fs) ? fs->valuestring : "-",
+                                cJSON_IsNumber(th) ? th->valueint : 0,
+                                cJSON_IsNumber(ch) ? ch->valueint : 0,
+                                cJSON_IsTrue(an) ? "DA" : "NU",
+                                cJSON_IsTrue(lk) ? "DA" : "NU");
+            } else if (kind == TUYA_KIND_SENSOR) {
+                cJSON *tp = cJSON_GetObjectItem(st, "temp");
+                cJSON *hm = cJSON_GetObjectItem(st, "humidity");
+                cJSON *bt = cJSON_GetObjectItem(st, "battery");
+                pos += snprintf(out + pos, out_sz - pos,
+                                "- %s (%s, via %s): Temp=%.1f C, Umiditate=%d%%, Baterie=%d%%\n",
+                                name, labels[ki], used[0] ? used : "cache",
+                                cJSON_IsNumber(tp) ? tp->valuedouble : 0.0,
+                                cJSON_IsNumber(hm) ? hm->valueint : 0,
+                                cJSON_IsNumber(bt) ? bt->valueint : 0);
+            } else {
+                cJSON *pw = cJSON_GetObjectItem(st, "power");
+                cJSON *wt = cJSON_GetObjectItem(st, "watts");
+                cJSON *aw = cJSON_GetObjectItem(st, "avg_watts");
+                cJSON *vv = cJSON_GetObjectItem(st, "voltage");
+                cJSON *cc = cJSON_GetObjectItem(st, "current_ma");
+                cJSON *kw = cJSON_GetObjectItem(st, "kwh_today");
+                pos += snprintf(out + pos, out_sz - pos,
+                                "- %s (%s, via %s): %s, Putere=%.1f W, Medie=%.1f W, Azi=%.2f kWh, %.1f V, %d mA\n",
+                                name, labels[ki], used[0] ? used : "cache",
+                                cJSON_IsTrue(pw) ? "ON" : "OFF",
+                                cJSON_IsNumber(wt) ? wt->valuedouble : 0.0,
+                                cJSON_IsNumber(aw) ? aw->valuedouble : 0.0,
+                                cJSON_IsNumber(kw) ? kw->valuedouble : 0.0,
+                                cJSON_IsNumber(vv) ? vv->valuedouble : 0.0,
+                                cJSON_IsNumber(cc) ? cc->valueint : 0);
+            }
+            cJSON_Delete(st);
+        }
+        cJSON_Delete(arr);
+    }
+}

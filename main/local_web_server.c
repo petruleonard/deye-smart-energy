@@ -1491,6 +1491,27 @@ static void build_inverter_ai_context(const char *extra_bat_info, char *out, siz
     history_store_query("year", yr_s, h_yr, sizeof(h_yr));
     history_store_query("total", day_s, h_tot, sizeof(h_tot));
 
+    char *smart = heap_caps_calloc(1, 1600, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!smart) smart = calloc(1, 1600);
+    if (smart) {
+        size_t spos = 0;
+        ac_state_t ac_st = {0};
+        char ac_err[96] = {0};
+        if (g_settings.ac_brand[0] && strcasecmp(g_settings.ac_brand, "none") != 0) {
+            if (ac_control_get_state(&ac_st, ac_err, sizeof(ac_err)) && ac_st.valid) {
+                spos += snprintf(smart + spos, 1600 - spos,
+                                 "- AC (%s): %s, Mod=%s, Tinta=%d C, Temp camera=%.1f C, Vent=%d\n",
+                                 g_settings.ac_brand, ac_st.power ? "PORNIT" : "OPRIT",
+                                 ac_st.mode[0] ? ac_st.mode : "-", ac_st.target_temp,
+                                 ac_st.has_current_temp ? ac_st.current_temp : 0.0f, ac_st.fan_speed);
+            } else {
+                spos += snprintf(smart + spos, 1600 - spos,
+                                 "- AC (%s): necitit (%s)\n", g_settings.ac_brand, ac_err[0] ? ac_err : "offline");
+            }
+        }
+        tuya_devices_ai_summary(smart + spos, 1600 - spos);
+    }
+
     if (!d.logger_connected) {
         snprintf(out, out_sz,
                  "DATE SISTEM DEYE (%s):\n"
@@ -1499,11 +1520,14 @@ static void build_inverter_ai_context(const char *extra_bat_info, char *out, siz
                  "- Istoric Zi (%s): %s\n"
                  "- Istoric Luna (%s): %s\n"
                  "- Istoric An (%s): %s\n"
-                 "- Istoric Total: %s\n%s",
+                 "- Istoric Total: %s\n"
+                 "DISPOZITIVE SMART (Tuya & AC, read-only):\n%s%s",
                  day_s,
                  (extra_bat_info && extra_bat_info[0]) ? extra_bat_info : "nespecificat",
                  day_s, h_day, mon_s, h_mon, yr_s, h_yr, h_tot,
+                 (smart && smart[0]) ? smart : "- niciun dispozitiv smart inregistrat\n",
                  meteo ? meteo : "");
+        free(smart);
         free(meteo);
         return;
     }
@@ -1521,7 +1545,8 @@ static void build_inverter_ai_context(const char *extra_bat_info, char *out, siz
              "- Istoric Zi (%s): %s\n"
              "- Istoric Luna (%s): %s\n"
              "- Istoric An (%s): %s\n"
-             "- Istoric Total: %s\n%s",
+             "- Istoric Total: %s\n"
+             "DISPOZITIVE SMART (Tuya & AC, read-only):\n%s%s",
              day_s,
              d.logger_connected ? "DA" : "NU",
              (g_settings.inv_phases == 3) ? "Trifazat 3F" : "Monofazat 1F",
@@ -1539,7 +1564,9 @@ static void build_inverter_ai_context(const char *extra_bat_info, char *out, siz
              (long)d.load_power_w, d.load_source_str, d.load_today_kwh, d.load_peak_today_kw, d.load_avg_hourly_kw,
              (extra_bat_info && extra_bat_info[0]) ? extra_bat_info : "standard",
              day_s, h_day, mon_s, h_mon, yr_s, h_yr, h_tot,
+             (smart && smart[0]) ? smart : "- niciun dispozitiv smart inregistrat\n",
              meteo ? meteo : "");
+    free(smart);
     free(meteo);
 }
 
@@ -1899,8 +1926,8 @@ static bool gemini_call_with_fallback(const char *full_prompt,
 
 static esp_err_t ai_ask_post_handler(httpd_req_t *req) {
     char *body = ai_alloc_buf(1536);
-    char *ctx = ai_alloc_buf(3200);
-    char *prompt = ai_alloc_buf(5000);
+    char *ctx = ai_alloc_buf(4800);
+    char *prompt = ai_alloc_buf(6600);
     char *reply = ai_alloc_buf(3072);
     char *esc_reply = ai_alloc_buf(3600);
     char *resp_json = ai_alloc_buf(3900);
@@ -1926,8 +1953,8 @@ static esp_err_t ai_ask_post_handler(httpd_req_t *req) {
         strncpy(question, "Cum functioneaza sistemul solar si bateria acum?", sizeof(question) - 1);
     }
 
-    build_inverter_ai_context(bat_info, ctx, 3200);
-    snprintf(prompt, 5000,
+    build_inverter_ai_context(bat_info, ctx, 4800);
+    snprintf(prompt, 6600,
              "Ești Argus, asistentul AI Solar al aplicației Deye Smart Energy (funcție strict READ-ONLY: doar citești, interpretezi și explici, NU modifici niciodată setări în invertor). "
              "Răspunde direct la întrebare în limba română corectă, obligatoriu cu diacritice (ă, â, î, ș, ț), clar, pe înțelesul oricui și concis (fără simboluri markdown ** sau `). "
              "IMPORTANT: NU te saluta și NU te prezenta din nou (nu începe cu 'Salut! Sunt Argus...') decât dacă utilizatorul doar te salută. "
@@ -1992,8 +2019,8 @@ static esp_err_t ai_ask_post_handler(httpd_req_t *req) {
 
 static esp_err_t ai_audit_post_handler(httpd_req_t *req) {
     char *body = ai_alloc_buf(512);
-    char *ctx = ai_alloc_buf(3200);
-    char *prompt = ai_alloc_buf(5000);
+    char *ctx = ai_alloc_buf(4800);
+    char *prompt = ai_alloc_buf(6600);
     char *reply = ai_alloc_buf(3072);
     char *esc_reply = ai_alloc_buf(3600);
     char *resp_json = ai_alloc_buf(3900);
@@ -2009,8 +2036,8 @@ static esp_err_t ai_audit_post_handler(httpd_req_t *req) {
         json_get_str(body, "bat_info", bat_info, sizeof(bat_info));
     }
 
-    build_inverter_ai_context(bat_info, ctx, 3200);
-    snprintf(prompt, 5000,
+    build_inverter_ai_context(bat_info, ctx, 4800);
+    snprintf(prompt, 6600,
              "Ești Argus, asistentul AI Solar din Deye Smart Energy (funcție strict READ-ONLY). "
              "Realizează un AUDIT SCURT ȘI CLAR al sistemului pentru proprietar, în limba română corectă, obligatoriu cu diacritice (ă, â, î, ș, ț), fără simboluri markdown ** sau `, folosind puncte •. "
              "IMPORTANT: NU te prezenta și NU saluta (începe direct cu punctul 1). "
