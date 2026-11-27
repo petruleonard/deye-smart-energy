@@ -559,6 +559,25 @@
       margin-inline-end: 4px;
     }
 
+    .lg-btn {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 999px;
+      padding: 3px 9px;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      transition: opacity 0.15s ease, border-color 0.15s ease;
+    }
+
+    .lg-btn.muted {
+      opacity: 0.35;
+      text-decoration: line-through;
+      border-color: rgba(148, 163, 184, 0.08);
+    }
+
     /* Quick Thumb Capsule Pills matching Mockup */
     .quick-dock {
       display: grid;
@@ -1337,9 +1356,9 @@
           <canvas class="chart-canvas" id="miniChart"></canvas>
         </div>
         <div class="chart-legend">
-          <span><span class="lg-dot" style="background:#f59e0b"></span>Solar PV</span>
-          <span><span class="lg-dot" style="background:#38bdf8"></span>Consum</span>
-          <span><span class="lg-dot" style="background:#34d399"></span>Baterie SoC%</span>
+          <button type="button" class="lg-btn" data-series="pv" onclick="toggleChartSeries('pv')"><span class="lg-dot" style="background:#f59e0b"></span>Solar PV</button>
+          <button type="button" class="lg-btn" data-series="load" onclick="toggleChartSeries('load')"><span class="lg-dot" style="background:#38bdf8"></span>Consum</button>
+          <button type="button" class="lg-btn" data-series="soc" onclick="toggleChartSeries('soc')"><span class="lg-dot" style="background:#34d399"></span>Baterie SoC%</button>
         </div>
       </section>
 
@@ -1875,7 +1894,9 @@
                 <path d="M9.5 15c.8.6 1.6.9 2.5.9s1.7-.3 2.5-.9" />
               </svg>
             </div>
-            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie, autonomie sau re&#x21B;ea.</div>
+            <div class="ai-msg-bot">Salut! Sunt Argus, robo&#x21B;elul AI al sistemului t&#x103;u Deye. Alege o
+              &#xEE;ntrebare rapid&#x103; de mai sus sau scrie-mi orice &#xEE;ntrebare despre panouri, baterie,
+              autonomie sau re&#x21B;ea.</div>
           </div>
         </div>
 
@@ -1998,11 +2019,15 @@
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
             <input type="text" id="acTuyaSecret" placeholder="Tuya Access Secret"
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <button type="button" onclick="discoverAcTuya()" style="width:100%; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
+            <button type="button" onclick="discoverAcTuya()"
+              style="width:100%; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103;
+              automat &#xEE;n Tuya Cloud</button>
             <div id="acTuyaDiscRow" style="display:none;">
-              <select id="acTuyaDiscSelect" onchange="onAcTuyaDiscSelect()" style="width:100%; background:#0f172a; color:#38bdf8; border:1px solid #38bdf8; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+              <select id="acTuyaDiscSelect" onchange="onAcTuyaDiscSelect()"
+                style="width:100%; background:#0f172a; color:#38bdf8; border:1px solid #38bdf8; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
             </div>
-            <input type="text" id="acTuyaDeviceId" placeholder="Tuya Device ID (se completeaz&#x103; automat la c&#x103;utare)"
+            <input type="text" id="acTuyaDeviceId"
+              placeholder="Tuya Device ID (se completeaz&#x103; automat la c&#x103;utare)"
               style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
           </div>
 
@@ -2024,66 +2049,110 @@
         </div>
         <div id="dehumControlBox" style="display:none; margin-top:8px;">
           <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
-            <select id="dehumDeviceSelect" onchange="dehumSelectDevice()" style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
-            <button type="button" id="dehumConnSwitchBtn" onclick="dehumToggleConnMode()" title="Comut&#x103; LAN / Cloud" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
-            <button type="button" onclick="loadDehumStatus(true)" title="Actualizeaz&#x103;" style="background:#0f172a; border:1px solid #334155; color:#34d399; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
-            <button type="button" onclick="toggleDehumSetup()" title="Set&#x103;ri" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
+            <select id="dehumDeviceSelect" onchange="dehumSelectDevice()"
+              style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
+            <button type="button" id="dehumConnSwitchBtn" onclick="dehumToggleConnMode()"
+              title="Comut&#x103; LAN / Cloud"
+              style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
+            <button type="button" onclick="loadDehumStatus(true)" title="Actualizeaz&#x103;"
+              style="background:#0f172a; border:1px solid #334155; color:#34d399; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleDehumSetup()" title="Set&#x103;ri"
+              style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px; margin-bottom:10px;">
-            <button type="button" id="dehumHumMinus" onclick="dehumStepHum(-5)" style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">&#8722;</button>
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px; margin-bottom:10px;">
+            <button type="button" id="dehumHumMinus" onclick="dehumStepHum(-5)"
+              style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">&#8722;</button>
             <div style="text-align:center;">
               <div style="font-size:28px; font-weight:800; color:#f8fafc; line-height:1;" id="dehumTargetHum">-- %</div>
-              <div style="font-size:11px; color:#94a3b8; margin-top:4px;" id="dehumRoomHum">&#xCE;n camer&#x103;: -- %</div>
+              <div style="font-size:11px; color:#94a3b8; margin-top:4px;" id="dehumRoomHum">&#xCE;n camer&#x103;: -- %
+              </div>
             </div>
-            <button type="button" id="dehumHumPlus" onclick="dehumStepHum(5)" style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">+</button>
-            <button type="button" id="dehumPowerBtn" onclick="dehumTogglePower()" style="min-width:64px; height:42px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer;">OFF</button>
+            <button type="button" id="dehumHumPlus" onclick="dehumStepHum(5)"
+              style="width:42px; height:42px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:#f8fafc; font-size:20px; font-weight:800; cursor:pointer;">+</button>
+            <button type="button" id="dehumPowerBtn" onclick="dehumTogglePower()"
+              style="min-width:64px; height:42px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:13px; font-weight:800; cursor:pointer;">OFF</button>
           </div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;" id="dehumModeRow">
-            <button type="button" class="dehum-mode-btn" data-mode="dehumidify" onclick="dehumSetMode('dehumidify')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Dezumid.</button>
-            <button type="button" class="dehum-mode-btn" data-mode="drying" onclick="dehumSetMode('drying')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Uscare</button>
-            <button type="button" class="dehum-mode-btn" data-mode="cleaning" onclick="dehumSetMode('cleaning')" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Continuu</button>
-            <button type="button" id="dehumAnionBtn" onclick="dehumToggleAnion()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Ionizare</button>
-            <button type="button" id="dehumLockBtn" onclick="dehumToggleLock()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Blocare</button>
-            <button type="button" id="dehumFanBtn" onclick="dehumCycleFan()" style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Vent. Low</button>
+            <button type="button" class="dehum-mode-btn" data-mode="dehumidify" onclick="dehumSetMode('dehumidify')"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Dezumid.</button>
+            <button type="button" class="dehum-mode-btn" data-mode="drying" onclick="dehumSetMode('drying')"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Uscare</button>
+            <button type="button" class="dehum-mode-btn" data-mode="cleaning" onclick="dehumSetMode('cleaning')"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Continuu</button>
+            <button type="button" id="dehumAnionBtn" onclick="dehumToggleAnion()"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Ionizare</button>
+            <button type="button" id="dehumLockBtn" onclick="dehumToggleLock()"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Blocare</button>
+            <button type="button" id="dehumFanBtn" onclick="dehumCycleFan()"
+              style="height:40px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:4px; font-size:12px; font-weight:700; cursor:pointer;">Vent.
+              Low</button>
           </div>
         </div>
         <div id="dehumSetupBox" style="margin-top:8px; display:none;">
-          <button type="button" onclick="discoverDehum()" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
-          <div id="dehumDiscRow" style="display:none; margin-bottom:8px;"><select id="dehumDiscSelect" onchange="onDehumDiscSelect()" style="width:100%; background:#0f172a; color:#34d399; border:1px solid #34d399; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <button type="button" onclick="discoverDehum()"
+            style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103;
+            automat &#xEE;n Tuya Cloud</button>
+          <div id="dehumDiscRow" style="display:none; margin-bottom:8px;"><select id="dehumDiscSelect"
+              onchange="onDehumDiscSelect()"
+              style="width:100%; background:#0f172a; color:#34d399; border:1px solid #34d399; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+          </div>
           <div style="display:flex; flex-direction:column; gap:7px;">
-            <input type="text" id="dehumName" placeholder="Nume aparat (ex: Dezumidificator EVOAIR)" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <select id="dehumConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+            <input type="text" id="dehumName" placeholder="Nume aparat (ex: Dezumidificator EVOAIR)"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="dehumConnMode"
+              style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
               <option value="auto">Auto (Local LAN cu fallback Cloud)</option>
               <option value="lan">Doar Local LAN (Tuya Port 6668)</option>
               <option value="cloud">Doar Tuya Cloud API</option>
             </select>
-            <input type="text" id="dehumDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="text" id="dehumDeviceId" placeholder="Tuya Device ID"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
             <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
-              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate
+                LAN &amp; Tuya Cloud</summary>
               <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="dehumIp" placeholder="IP Local (op&#x21B;ional, auto pe LAN)" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <select id="dehumVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
-                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  <input type="text" id="dehumIp" placeholder="IP Local (op&#x21B;ional, auto pe LAN)"
+                    style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="dehumVer"
+                    style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option>
+                    <option value="3.3">Tuya 3.3</option>
+                    <option value="3.4">Tuya 3.4</option>
+                    <option value="3.5">Tuya 3.5</option>
                   </select>
                 </div>
-                <input type="text" id="dehumLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <select id="dehumTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <option value="">Regiune Tuya</option><option value="eu">Europa (openapi.tuyaeu.com)</option><option value="us">America (openapi.tuyaus.com)</option><option value="cn">China (openapi.tuyacn.com)</option><option value="in">India (openapi.tuyain.com)</option>
+                <input type="text" id="dehumLocalKey" placeholder="Local Key"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="dehumTuyaRegion"
+                  style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option>
+                  <option value="eu">Europa (openapi.tuyaeu.com)</option>
+                  <option value="us">America (openapi.tuyaus.com)</option>
+                  <option value="cn">China (openapi.tuyacn.com)</option>
+                  <option value="in">India (openapi.tuyain.com)</option>
                 </select>
-                <input type="text" id="dehumTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <input type="text" id="dehumTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="dehumTuyaClientId" placeholder="Tuya Access ID"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="dehumTuyaSecret" placeholder="Tuya Access Secret"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
               </div>
             </details>
           </div>
           <div style="display:flex; gap:8px; margin-top:9px;">
-            <button type="button" onclick="saveDehumConfig()" style="flex:1; background:#059669; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
-            <button type="button" id="dehumDisconnectBtn" onclick="disconnectDehum()" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+            <button type="button" onclick="saveDehumConfig()"
+              style="flex:1; background:#059669; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103;
+              &amp; Salveaz&#x103;</button>
+            <button type="button" id="dehumDisconnectBtn" onclick="disconnectDehum()"
+              style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
           </div>
           <div id="dehumMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
         </div>
         <div id="dehumCollapsedInit" style="margin-top:8px;">
-          <button type="button" onclick="toggleDehumSetup(true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; dezumidificator</button>
+          <button type="button" onclick="toggleDehumSetup(true)"
+            style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+
+            &#xCE;nregistreaz&#x103; dezumidificator</button>
         </div>
       </div>
 
@@ -2091,46 +2160,77 @@
         <div class="autonomy-head">
           <span class="autonomy-title" style="color:#fbbf24;">SENZORI TEMPERATUR&#x102; &amp; UMIDITATE</span>
           <span style="display:flex; gap:6px;">
-            <button type="button" onclick="loadSensorsStatus()" style="background:#0f172a; border:1px solid #334155; color:#fbbf24; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#8635;</button>
-            <button type="button" onclick="toggleTuyaDevSetup('sensor')" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#9881;</button>
+            <button type="button" onclick="loadSensorsStatus()"
+              style="background:#0f172a; border:1px solid #334155; color:#fbbf24; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleTuyaDevSetup('sensor')"
+              style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:700; cursor:pointer;">&#9881;</button>
           </span>
         </div>
         <div id="sensorList" style="display:flex; flex-direction:column; gap:7px; margin-top:8px;"></div>
         <div id="sensorSetupBox" style="margin-top:8px; display:none;">
-          <button type="button" onclick="discoverTuyaDev('sensor')" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
-          <div id="sensorDiscRow" style="display:none; margin-bottom:8px;"><select id="sensorDiscSelect" onchange="onTuyaDiscSelect('sensor')" style="width:100%; background:#0f172a; color:#fbbf24; border:1px solid #fbbf24; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <button type="button" onclick="discoverTuyaDev('sensor')"
+            style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103;
+            automat &#xEE;n Tuya Cloud</button>
+          <div id="sensorDiscRow" style="display:none; margin-bottom:8px;"><select id="sensorDiscSelect"
+              onchange="onTuyaDiscSelect('sensor')"
+              style="width:100%; background:#0f172a; color:#fbbf24; border:1px solid #fbbf24; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+          </div>
           <div style="display:flex; flex-direction:column; gap:7px;">
-            <input type="text" id="sensorName" placeholder="Nume senzor" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <select id="sensorConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
-              <option value="auto">Auto (Local LAN cu fallback Cloud)</option><option value="lan">Doar Local LAN (Tuya Port 6668)</option><option value="cloud">Doar Tuya Cloud API</option>
+            <input type="text" id="sensorName" placeholder="Nume senzor"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="sensorConnMode"
+              style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="auto">Auto (Local LAN cu fallback Cloud)</option>
+              <option value="lan">Doar Local LAN (Tuya Port 6668)</option>
+              <option value="cloud">Doar Tuya Cloud API</option>
             </select>
-            <input type="text" id="sensorDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="text" id="sensorDeviceId" placeholder="Tuya Device ID"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
             <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
-              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate
+                LAN &amp; Tuya Cloud</summary>
               <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="sensorIp" placeholder="IP Local" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <select id="sensorVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
-                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  <input type="text" id="sensorIp" placeholder="IP Local"
+                    style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="sensorVer"
+                    style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option>
+                    <option value="3.3">Tuya 3.3</option>
+                    <option value="3.4">Tuya 3.4</option>
+                    <option value="3.5">Tuya 3.5</option>
                   </select>
                 </div>
-                <input type="text" id="sensorLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <select id="sensorTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <option value="">Regiune Tuya</option><option value="eu">Europa</option><option value="us">America</option><option value="cn">China</option><option value="in">India</option>
+                <input type="text" id="sensorLocalKey" placeholder="Local Key"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="sensorTuyaRegion"
+                  style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option>
+                  <option value="eu">Europa</option>
+                  <option value="us">America</option>
+                  <option value="cn">China</option>
+                  <option value="in">India</option>
                 </select>
-                <input type="text" id="sensorTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <input type="text" id="sensorTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="sensorTuyaClientId" placeholder="Tuya Access ID"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="sensorTuyaSecret" placeholder="Tuya Access Secret"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
               </div>
             </details>
           </div>
           <div style="display:flex; gap:8px; margin-top:9px;">
-            <button type="button" onclick="saveTuyaDevConfig('sensor')" style="flex:1; background:#d97706; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
-            <button type="button" id="sensorDisconnectBtn" onclick="disconnectTuyaDev('sensor')" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+            <button type="button" onclick="saveTuyaDevConfig('sensor')"
+              style="flex:1; background:#d97706; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103;
+              &amp; Salveaz&#x103;</button>
+            <button type="button" id="sensorDisconnectBtn" onclick="disconnectTuyaDev('sensor')"
+              style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
           </div>
           <div id="sensorMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
         </div>
         <div id="sensorCollapsedInit" style="margin-top:8px;">
-          <button type="button" onclick="toggleTuyaDevSetup('sensor', true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; termometru</button>
+          <button type="button" onclick="toggleTuyaDevSetup('sensor', true)"
+            style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+
+            &#xCE;nregistreaz&#x103; termometru</button>
         </div>
       </div>
 
@@ -2141,12 +2241,17 @@
         </div>
         <div id="plugControlBox" style="display:none; margin-top:8px;">
           <div style="display:flex; gap:6px; align-items:center; margin-bottom:10px;">
-            <select id="plugDeviceSelect" onchange="plugSelectDevice()" style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
-            <button type="button" id="plugConnSwitchBtn" onclick="plugToggleConnMode()" style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
-            <button type="button" onclick="loadPlugStatus()" style="background:#0f172a; border:1px solid #334155; color:#c084fc; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
-            <button type="button" onclick="toggleTuyaDevSetup('plug')" style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
+            <select id="plugDeviceSelect" onchange="plugSelectDevice()"
+              style="flex:1; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700;"></select>
+            <button type="button" id="plugConnSwitchBtn" onclick="plugToggleConnMode()"
+              style="background:#0f172a; border:1px solid #334155; color:#38bdf8; border-radius:8px; padding:7px 9px; font-size:11.5px; font-weight:800; cursor:pointer;">AUTO</button>
+            <button type="button" onclick="loadPlugStatus()"
+              style="background:#0f172a; border:1px solid #334155; color:#c084fc; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#8635;</button>
+            <button type="button" onclick="toggleTuyaDevSetup('plug')"
+              style="background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:8px; padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer;">&#9881;</button>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px;">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; background:#0f172a; border:1px solid #1e293b; border-radius:12px; padding:12px;">
             <div>
               <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
                 <span style="font-size:26px; font-weight:800; color:#f8fafc; line-height:1;" id="plugWatts">-- W</span>
@@ -2154,44 +2259,74 @@
               </div>
               <div style="font-size:11.5px; color:#94a3b8; margin-top:4px;" id="plugMetrics">-- V &#8226; -- mA</div>
             </div>
-            <button type="button" id="plugPowerBtn" onclick="plugTogglePower()" style="min-width:74px; height:44px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:14px; font-weight:800; cursor:pointer;">OFF</button>
+            <button type="button" id="plugPowerBtn" onclick="plugTogglePower()"
+              style="min-width:74px; height:44px; border-radius:10px; border:1px solid #475569; background:#1e293b; color:#94a3b8; font-size:14px; font-weight:800; cursor:pointer;">OFF</button>
           </div>
         </div>
         <div id="plugSetupBox" style="margin-top:8px; display:none;">
-          <button type="button" onclick="discoverTuyaDev('plug')" style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103; automat &#xEE;n Tuya Cloud</button>
-          <div id="plugDiscRow" style="display:none; margin-bottom:8px;"><select id="plugDiscSelect" onchange="onTuyaDiscSelect('plug')" style="width:100%; background:#0f172a; color:#c084fc; border:1px solid #c084fc; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select></div>
+          <button type="button" onclick="discoverTuyaDev('plug')"
+            style="width:100%; margin-bottom:8px; background:#0f172a; border:1px solid #38bdf8; color:#38bdf8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">Caut&#x103;
+            automat &#xEE;n Tuya Cloud</button>
+          <div id="plugDiscRow" style="display:none; margin-bottom:8px;"><select id="plugDiscSelect"
+              onchange="onTuyaDiscSelect('plug')"
+              style="width:100%; background:#0f172a; color:#c084fc; border:1px solid #c084fc; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;"></select>
+          </div>
           <div style="display:flex; flex-direction:column; gap:7px;">
-            <input type="text" id="plugName" placeholder="Nume priz&#x103;" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-            <select id="plugConnMode" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
-              <option value="auto">Auto (Local LAN cu fallback Cloud)</option><option value="lan">Doar Local LAN (Tuya Port 6668)</option><option value="cloud">Doar Tuya Cloud API</option>
+            <input type="text" id="plugName" placeholder="Nume priz&#x103;"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <select id="plugConnMode"
+              style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px; font-weight:700;">
+              <option value="auto">Auto (Local LAN cu fallback Cloud)</option>
+              <option value="lan">Doar Local LAN (Tuya Port 6668)</option>
+              <option value="cloud">Doar Tuya Cloud API</option>
             </select>
-            <input type="text" id="plugDeviceId" placeholder="Tuya Device ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+            <input type="text" id="plugDeviceId" placeholder="Tuya Device ID"
+              style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
             <details style="background:#0f172a; border:1px solid #1e293b; border-radius:8px; padding:6px 8px;">
-              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate LAN &amp; Tuya Cloud</summary>
+              <summary style="font-size:11.5px; color:#94a3b8; cursor:pointer; font-weight:700;">Set&#x103;ri avansate
+                LAN &amp; Tuya Cloud</summary>
               <div style="display:flex; flex-direction:column; gap:7px; margin-top:8px;">
                 <div style="display:flex; gap:6px;">
-                  <input type="text" id="plugIp" placeholder="IP Local" style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <select id="plugVer" style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
-                    <option value="auto">Auto (3.3-3.5)</option><option value="3.3">Tuya 3.3</option><option value="3.4">Tuya 3.4</option><option value="3.5">Tuya 3.5</option>
+                  <input type="text" id="plugIp" placeholder="IP Local"
+                    style="flex:1; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <select id="plugVer"
+                    style="width:115px; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 8px; font-size:12px;">
+                    <option value="auto">Auto (3.3-3.5)</option>
+                    <option value="3.3">Tuya 3.3</option>
+                    <option value="3.4">Tuya 3.4</option>
+                    <option value="3.5">Tuya 3.5</option>
                   </select>
                 </div>
-                <input type="text" id="plugLocalKey" placeholder="Local Key" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <select id="plugTuyaRegion" style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                  <option value="">Regiune Tuya</option><option value="eu">Europa</option><option value="us">America</option><option value="cn">China</option><option value="in">India</option>
+                <input type="text" id="plugLocalKey" placeholder="Local Key"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <select id="plugTuyaRegion"
+                  style="width:100%; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                  <option value="">Regiune Tuya</option>
+                  <option value="eu">Europa</option>
+                  <option value="us">America</option>
+                  <option value="cn">China</option>
+                  <option value="in">India</option>
                 </select>
-                <input type="text" id="plugTuyaClientId" placeholder="Tuya Access ID" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
-                <input type="text" id="plugTuyaSecret" placeholder="Tuya Access Secret" style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="plugTuyaClientId" placeholder="Tuya Access ID"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
+                <input type="text" id="plugTuyaSecret" placeholder="Tuya Access Secret"
+                  style="width:100%; box-sizing:border-box; background:#0f172a; color:#f1f5f9; border:1px solid #334155; border-radius:8px; padding:8px 10px; font-size:13px;">
               </div>
             </details>
           </div>
           <div style="display:flex; gap:8px; margin-top:9px;">
-            <button type="button" onclick="saveTuyaDevConfig('plug')" style="flex:1; background:#9333ea; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103; &amp; Salveaz&#x103;</button>
-            <button type="button" id="plugDisconnectBtn" onclick="disconnectTuyaDev('plug')" style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
+            <button type="button" onclick="saveTuyaDevConfig('plug')"
+              style="flex:1; background:#9333ea; border:none; color:#ffffff; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">Conecteaz&#x103;
+              &amp; Salveaz&#x103;</button>
+            <button type="button" id="plugDisconnectBtn" onclick="disconnectTuyaDev('plug')"
+              style="display:none; background:#1f1218; border:1px solid #ef4444; color:#fca5a5; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:700; cursor:pointer;">&#x218;terge</button>
           </div>
           <div id="plugMsg" style="font-size:12px; color:#94a3b8; margin-top:7px;"></div>
         </div>
         <div id="plugCollapsedInit" style="margin-top:8px;">
-          <button type="button" onclick="toggleTuyaDevSetup('plug', true)" style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+ &#xCE;nregistreaz&#x103; priz&#x103; smart</button>
+          <button type="button" onclick="toggleTuyaDevSetup('plug', true)"
+            style="width:100%; background:#0f172a; border:1px dashed #334155; color:#94a3b8; border-radius:8px; padding:8px 10px; font-size:12.5px; font-weight:700; cursor:pointer;">+
+            &#xCE;nregistreaz&#x103; priz&#x103; smart</button>
         </div>
       </div>
     </section>
@@ -2349,7 +2484,7 @@
         }
       }
       gCurrentView = viewId;
-      try { sessionStorage.setItem("deye_cur_view", viewId); } catch (_) {}
+      try { sessionStorage.setItem("deye_cur_view", viewId); } catch (_) { }
       for (const p of document.querySelectorAll(".view-pane")) {
         p.hidden = (p.id !== viewId);
       }
@@ -2892,7 +3027,7 @@
           const baseT = flowPhase / 100;
           const evalB = (p0, p1, p2, p3, t) => {
             const u = 1 - t;
-            return [u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0], u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]];
+            return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]];
           };
           const subB = (p0, p1, p2, p3, tA, tB) => {
             const pts = [];
@@ -3018,6 +3153,32 @@
       return Array.isArray(gChartPts) ? gChartPts : [];
     }
 
+    let gChartVis = { pv: true, load: true, soc: true };
+    try {
+      const savedVis = JSON.parse(localStorage.getItem("deye_chart_vis") || "null");
+      if (savedVis && typeof savedVis === "object") {
+        gChartVis.pv = savedVis.pv !== false;
+        gChartVis.load = savedVis.load !== false;
+        gChartVis.soc = savedVis.soc !== false;
+      }
+    } catch (_) {}
+
+    function syncChartLegendBtns() {
+      document.querySelectorAll(".lg-btn[data-series]").forEach(btn => {
+        const k = btn.getAttribute("data-series");
+        btn.classList.toggle("muted", !gChartVis[k]);
+      });
+    }
+
+    function toggleChartSeries(k) {
+      gChartVis[k] = !gChartVis[k];
+      try { localStorage.setItem("deye_chart_vis", JSON.stringify(gChartVis)); } catch (_) {}
+      syncChartLegendBtns();
+      drawEnergyChart("miniChart", false);
+    }
+
+    syncChartLegendBtns();
+
     function drawEnergyChart(canvasId, detailed) {
       const cv = document.getElementById(canvasId);
       if (!cv) return;
@@ -3079,42 +3240,48 @@
         const ldXY = pts.map(p => [mapX(p.m), mapY(p.load || 0)]);
         const socXY = pts.map(p => [mapX(p.m), padT + ch - ((p.soc || 0) / 100) * ch]);
 
-        const pvGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
-        pvGrad.addColorStop(0, "rgba(245, 158, 11, 0.55)");
-        pvGrad.addColorStop(1, "rgba(245, 158, 11, 0.02)");
-        drawSmoothSpline(ctx, pvXY, padT + ch);
-        ctx.fillStyle = pvGrad;
-        ctx.fill();
+        if (gChartVis.pv) {
+          const pvGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+          pvGrad.addColorStop(0, "rgba(245, 158, 11, 0.55)");
+          pvGrad.addColorStop(1, "rgba(245, 158, 11, 0.02)");
+          drawSmoothSpline(ctx, pvXY, padT + ch);
+          ctx.fillStyle = pvGrad;
+          ctx.fill();
 
-        drawSmoothSpline(ctx, pvXY);
-        ctx.strokeStyle = "#f59e0b";
-        ctx.lineWidth = 2.2;
-        ctx.stroke();
+          drawSmoothSpline(ctx, pvXY);
+          ctx.strokeStyle = "#f59e0b";
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+        }
 
-        const ldGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
-        ldGrad.addColorStop(0, "rgba(56, 189, 248, 0.35)");
-        ldGrad.addColorStop(1, "rgba(56, 189, 248, 0.01)");
-        drawSmoothSpline(ctx, ldXY, padT + ch);
-        ctx.fillStyle = ldGrad;
-        ctx.fill();
+        if (gChartVis.load) {
+          const ldGrad = ctx.createLinearGradient(0, padT, 0, padT + ch);
+          ldGrad.addColorStop(0, "rgba(56, 189, 248, 0.35)");
+          ldGrad.addColorStop(1, "rgba(56, 189, 248, 0.01)");
+          drawSmoothSpline(ctx, ldXY, padT + ch);
+          ctx.fillStyle = ldGrad;
+          ctx.fill();
 
-        drawSmoothSpline(ctx, ldXY);
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+          drawSmoothSpline(ctx, ldXY);
+          ctx.strokeStyle = "#38bdf8";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
 
-        ctx.save();
-        ctx.setLineDash([4, 3]);
-        drawSmoothSpline(ctx, socXY);
-        ctx.strokeStyle = "#34d399";
-        ctx.lineWidth = 1.7;
-        ctx.stroke();
-        ctx.restore();
+        if (gChartVis.soc) {
+          ctx.save();
+          ctx.setLineDash([4, 3]);
+          drawSmoothSpline(ctx, socXY);
+          ctx.strokeStyle = "#34d399";
+          ctx.lineWidth = 1.7;
+          ctx.stroke();
+          ctx.restore();
+        }
       } else if (pts.length === 1) {
         const p = pts[0], x0 = mapX(p.m);
-        ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(x0, mapY(p.pv || 0), 3.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(x0, mapY(p.load || 0), 3.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#34d399"; ctx.beginPath(); ctx.arc(x0, padT + ch - ((p.soc || 0) / 100) * ch, 3.5, 0, Math.PI * 2); ctx.fill();
+        if (gChartVis.pv) { ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(x0, mapY(p.pv || 0), 3.5, 0, Math.PI * 2); ctx.fill(); }
+        if (gChartVis.load) { ctx.fillStyle = "#38bdf8"; ctx.beginPath(); ctx.arc(x0, mapY(p.load || 0), 3.5, 0, Math.PI * 2); ctx.fill(); }
+        if (gChartVis.soc) { ctx.fillStyle = "#34d399"; ctx.beginPath(); ctx.arc(x0, padT + ch - ((p.soc || 0) / 100) * ch, 3.5, 0, Math.PI * 2); ctx.fill(); }
       }
 
       // Fixed 00:00 -> 24:00 X-axis labels
@@ -4612,12 +4779,12 @@
     (() => {
       const h = (location.hash || "").replace(/^#/, "");
       let sv = h;
-      if (!sv) { try { sv = sessionStorage.getItem("deye_cur_view") || ""; } catch (_) {} }
+      if (!sv) { try { sv = sessionStorage.getItem("deye_cur_view") || ""; } catch (_) { } }
       if (sv && sv !== "view-live" && document.getElementById(sv)) {
         try {
           history.replaceState({ view: "view-live" }, "", "#view-live");
           history.pushState({ view: sv }, "", "#" + sv);
-        } catch (_) {}
+        } catch (_) { }
         openView(sv, true);
       }
     })();

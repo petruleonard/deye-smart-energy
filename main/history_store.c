@@ -14,6 +14,9 @@
 static const char *TAG = "history_store";
 #define HIST_FILE "/spiffs/history.csv"
 #define HIST_TMP  "/spiffs/history.tmp"
+#define CHART_FILE "/spiffs/chart_day.bin"
+#define CHART_TMP  "/spiffs/chart_day.tmp"
+#define CHART_MAGIC 0x43485231U
 
 static SemaphoreHandle_t s_hist_mutex = NULL;
 static bool s_spiffs_ok = false;
@@ -30,10 +33,64 @@ typedef struct {
     uint8_t soc;
 } chart_pt_t;
 
+typedef struct {
+    uint32_t magic;
+    uint16_t year;
+    uint8_t mon;
+    uint8_t mday;
+    int32_t count;
+} chart_hdr_t;
+
 static chart_pt_t s_chart_pts[MAX_CHART_PTS];
 static int s_chart_count = 0;
 static int s_chart_day = -1;
+static int s_chart_year = 0;
+static int s_chart_mon = 0;
 static bool s_fast_test = false;
+
+static void chart_save_to_spiffs(void)
+{
+    if (!s_spiffs_ok || s_fast_test || s_chart_year < 2024) return;
+    FILE *f = fopen(CHART_TMP, "wb");
+    if (!f) return;
+    chart_hdr_t hdr = {
+        .magic = CHART_MAGIC,
+        .year = (uint16_t)s_chart_year,
+        .mon = (uint8_t)s_chart_mon,
+        .mday = (uint8_t)s_chart_day,
+        .count = s_chart_count,
+    };
+    bool ok = (fwrite(&hdr, sizeof(hdr), 1, f) == 1);
+    if (ok && s_chart_count > 0) {
+        ok = (fwrite(s_chart_pts, sizeof(chart_pt_t), (size_t)s_chart_count, f) == (size_t)s_chart_count);
+    }
+    fclose(f);
+    if (ok) {
+        unlink(CHART_FILE);
+        rename(CHART_TMP, CHART_FILE);
+    } else {
+        unlink(CHART_TMP);
+    }
+}
+
+static void chart_load_from_spiffs(void)
+{
+    if (!s_spiffs_ok) return;
+    FILE *f = fopen(CHART_FILE, "rb");
+    if (!f) return;
+    chart_hdr_t hdr = {0};
+    if (fread(&hdr, sizeof(hdr), 1, f) == 1 && hdr.magic == CHART_MAGIC && hdr.count >= 0 && hdr.count <= MAX_CHART_PTS) {
+        if (hdr.count == 0 || fread(s_chart_pts, sizeof(chart_pt_t), (size_t)hdr.count, f) == (size_t)hdr.count) {
+            s_chart_count = hdr.count;
+            s_chart_year = hdr.year;
+            s_chart_mon = hdr.mon;
+            s_chart_day = hdr.mday;
+            ESP_LOGI(TAG, "Restored %d intraday chart points (%04d-%02d-%02d)",
+                     s_chart_count, s_chart_year, s_chart_mon, s_chart_day);
+        }
+    }
+    fclose(f);
+}
 
 typedef struct {
     char date[12];
@@ -65,6 +122,7 @@ void history_store_init(void)
     if (ret == ESP_OK) {
         s_spiffs_ok = true;
         ESP_LOGI(TAG, "SPIFFS mounted at /spiffs for local history");
+        chart_load_from_spiffs();
     } else {
         ESP_LOGE(TAG, "Failed to mount SPIFFS: %s", esp_err_to_name(ret));
     }
@@ -96,11 +154,16 @@ void history_store_record(const deye_data_t *d)
             goto skip_chart_until_sntp;
         }
         if (xSemaphoreTake(s_hist_mutex, pdMS_TO_TICKS(200)) == pdTRUE) {
-            if (!s_fast_test && tmi.tm_year + 1900 >= 2024 && s_chart_day != -1 && s_chart_day != tmi.tm_mday) {
+            int y_now = tmi.tm_year + 1900, m_now = tmi.tm_mon + 1, d_now = tmi.tm_mday;
+            if (!s_fast_test && y_now >= 2024 &&
+                ((s_chart_year > 0 && (s_chart_year != y_now || s_chart_mon != m_now || s_chart_day != d_now)) ||
+                 (s_chart_day != -1 && s_chart_day != d_now))) {
                 s_chart_count = 0;
             }
-            if (!s_fast_test && tmi.tm_year + 1900 >= 2024) {
-                s_chart_day = tmi.tm_mday;
+            if (!s_fast_test && y_now >= 2024) {
+                s_chart_year = y_now;
+                s_chart_mon = m_now;
+                s_chart_day = d_now;
             }
             if (s_fast_test && s_chart_count >= 24) {
                 s_chart_count = 0; // Zi noua de la 00:00 in modul rapid 24h
@@ -122,6 +185,7 @@ void history_store_record(const deye_data_t *d)
             s_chart_pts[s_chart_count].soc = (uint8_t)d->battery_soc;
             s_chart_count++;
             s_last_chart_us = now_us;
+            chart_save_to_spiffs();
             xSemaphoreGive(s_hist_mutex);
         }
     }
@@ -242,8 +306,12 @@ bool history_store_clear(void)
     if (!s_spiffs_ok) return false;
     if (xSemaphoreTake(s_hist_mutex, pdMS_TO_TICKS(500)) != pdTRUE) return false;
     unlink(HIST_FILE);
+    unlink(CHART_FILE);
     s_last_save_us = 0;
     s_chart_count = 0;
+    s_chart_day = -1;
+    s_chart_year = 0;
+    s_chart_mon = 0;
     s_last_chart_us = 0;
     xSemaphoreGive(s_hist_mutex);
     return true;
