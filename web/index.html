@@ -2858,7 +2858,7 @@
     }
 
     function animBeams() {
-      flowPhase = (flowPhase + 0.95) % 100;
+      flowPhase = (flowPhase + 1.35) % 100;
       const g = document.getElementById("flowBeams");
       const hub = document.getElementById("flowHub");
       const svg = document.getElementById("flowSvg");
@@ -2933,7 +2933,6 @@
             }
             const ang = Math.atan2(e[1] - c[1], e[0] - c[0]) * 180 / Math.PI;
             out.push(`<g transform="translate(${e[0].toFixed(1)},${e[1].toFixed(1)}) rotate(${ang.toFixed(1)})">
-              <circle cx="-1" cy="0" r="9.5" fill="${haloColor}" opacity="0.42" filter="url(#neonHalo)"/>
               <polygon points="-2.5,-5.8 9.5,0 -2.5,5.8 0.4,0" fill="${color}" filter="url(#neonGlow)"/>
               <polygon points="0,-2.6 6.2,0 0,2.6" fill="${starColor}" opacity="0.92"/>
             </g>`);
