@@ -165,6 +165,72 @@ static void manage_battery_charge_schedule(deye_data_t *cur)
     }
 }
 
+static void sanitize_telemetry_spikes(deye_data_t *cur)
+{
+    static float s_prev_inv_temp = -999.0f;
+    static float s_prev_bat_temp = -999.0f;
+    static uint8_t s_inv_spike_cnt = 0;
+    static uint8_t s_bat_spike_cnt = 0;
+
+    if (!cur) return;
+
+    // Protectie la cadre corupte / spike-uri izolate de temperatura invertor
+    if (cur->inverter_temp_c < -10.0f || cur->inverter_temp_c > 110.0f) {
+        if (s_prev_inv_temp > -10.0f) cur->inverter_temp_c = s_prev_inv_temp;
+        else cur->inverter_temp_c = 0.0f;
+        s_inv_spike_cnt = 0;
+    } else if (s_prev_inv_temp > 0.0f) {
+        float diff = cur->inverter_temp_c - s_prev_inv_temp;
+        if (diff < 0.0f) diff = -diff;
+        if (diff > 25.0f) {
+            s_inv_spike_cnt++;
+            if (s_inv_spike_cnt < 2) {
+                ESP_LOGW(TAG, "Spike izolat inv_temp ignorat: %.1f C (prev %.1f C)", cur->inverter_temp_c, s_prev_inv_temp);
+                cur->inverter_temp_c = s_prev_inv_temp;
+            } else {
+                s_prev_inv_temp = cur->inverter_temp_c;
+                s_inv_spike_cnt = 0;
+            }
+        } else {
+            s_prev_inv_temp = cur->inverter_temp_c;
+            s_inv_spike_cnt = 0;
+        }
+    } else if (cur->inverter_temp_c > 0.0f) {
+        s_prev_inv_temp = cur->inverter_temp_c;
+        s_inv_spike_cnt = 0;
+    }
+
+    // Protectie la cadre corupte / spike-uri izolate de temperatura baterie
+    if (cur->battery_temp_c < -30.0f || cur->battery_temp_c > 80.0f) {
+        if (s_prev_bat_temp > -30.0f) cur->battery_temp_c = s_prev_bat_temp;
+        else cur->battery_temp_c = 20.0f;
+        s_bat_spike_cnt = 0;
+    } else if (s_prev_bat_temp > -30.0f) {
+        float diff = cur->battery_temp_c - s_prev_bat_temp;
+        if (diff < 0.0f) diff = -diff;
+        if (diff > 15.0f) {
+            s_bat_spike_cnt++;
+            if (s_bat_spike_cnt < 2) {
+                ESP_LOGW(TAG, "Spike izolat bat_temp ignorat: %.1f C (prev %.1f C)", cur->battery_temp_c, s_prev_bat_temp);
+                cur->battery_temp_c = s_prev_bat_temp;
+            } else {
+                s_prev_bat_temp = cur->battery_temp_c;
+                s_bat_spike_cnt = 0;
+            }
+        } else {
+            s_prev_bat_temp = cur->battery_temp_c;
+            s_bat_spike_cnt = 0;
+        }
+    } else {
+        s_prev_bat_temp = cur->battery_temp_c;
+        s_bat_spike_cnt = 0;
+    }
+
+    if (cur->grid_volts > 450.0f) cur->grid_volts = 0.0f;
+    if (cur->grid_l2_volts > 450.0f) cur->grid_l2_volts = 0.0f;
+    if (cur->grid_l3_volts > 450.0f) cur->grid_l3_volts = 0.0f;
+}
+
 static esp_err_t poll_three_phase(deye_data_t *cur)
 {
     uint16_t b1[28]; // 514..541
@@ -235,6 +301,7 @@ static esp_err_t poll_three_phase(deye_data_t *cur)
 
     snprintf(cur->status_str, sizeof(cur->status_str), "Conectat 3F | PV:%ldW Casa:%ldW Bat:%d%%",
              (long)cur->pv_power_w, (long)cur->load_power_w, cur->battery_soc);
+    sanitize_telemetry_spikes(cur);
     return ESP_OK;
 }
 
@@ -497,6 +564,7 @@ static void deye_poller_task(void *pvParameters)
         snprintf(cur.status_str, sizeof(cur.status_str), "Conectat | PV:%ldW Casă:%ldW Bat:%d%%",
                  (long)cur.pv_power_w, (long)cur.load_power_w, cur.battery_soc);
 
+        sanitize_telemetry_spikes(&cur);
         manage_battery_charge_schedule(&cur);
         deye_data_update(&cur);
         if (cur.logger_connected) {
