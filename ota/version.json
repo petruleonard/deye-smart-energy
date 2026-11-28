@@ -1,5 +1,5 @@
 {
   "version": "v1.0.3",
   "url": "https://raw.githubusercontent.com/petruleonard/deye-smart-energy/main/build/deye_esp32_s3_bridge.bin",
-  "notes": "v1.0.3: Argus AI vede toate dispozitivele Tuya & AC TCL (read-only), persistenta grafic zilnic in SPIFFS, flux fibra optica Bezier si autodetectare LAN 3.5->3.3."
+  "notes": "v1.0.3: Argus AI vede toate dispozitivele Tuya & AC TCL (read-only), protectie cadre Modbus corupte si spike-uri temperatura, persistenta grafic zilnic in SPIFFS, flux fibra optica Bezier si autodetectare LAN 3.5->3.3."
 }
